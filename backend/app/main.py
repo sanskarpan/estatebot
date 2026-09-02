@@ -188,7 +188,7 @@ def models():
             for model_id in settings.selectable_models
         ],
         "fallback_enabled": True,
-        "catalog_checked_at": "2026-09-02",
+        "catalog_checked_at": "2026-09-03",
     }
 
 

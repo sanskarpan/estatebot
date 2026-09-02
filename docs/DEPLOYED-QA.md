@@ -73,3 +73,12 @@ The 11-message live sample completed without timeouts or crashes. Grounded model
 - A live TCP connection was not deliberately severed mid-stream; automated tests verify that an unverified/incomplete stream is never presented as a grounded answer.
 - A 50-turn visual stress session was not run; client and server history are explicitly bounded.
 
+## Free-model selector addendum — 2026-09-03
+
+- The live OpenRouter catalogue was reviewed and filtered to six suitable zero-cost text-answering models; selection rationale and exclusions are recorded in [`OPENROUTER-MODELS.md`](OPENROUTER-MODELS.md).
+- `GET /api/models` returned the six curated choices, model labels, fallback status, and catalogue date from the public service.
+- A direct public `POST /api/chat` requesting Dots3 Note Preview returned `grounded=true`, one canonical DG1 citation, a non-empty answer, and the requested model in `model_used`.
+- An arbitrary non-allow-listed model ID returned HTTP 400 with `invalid_model` and was not forwarded upstream.
+- In the deployed browser UI, Dots3 could be selected from the labelled native combobox, served the answer, and appeared as “Answered with Dots3 Note Preview” below it.
+- The selected choice and actual-model disclosure survived reload. At 375×812, the selector measured 312×40 px and the document remained free of horizontal overflow.
+- Automated coverage increased to 59 passing tests, including catalogue allow-listing, selected-model-first ordering, fallback/deduplication, request propagation, actual-model reporting, and invalid-model rejection.

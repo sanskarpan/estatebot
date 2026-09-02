@@ -43,6 +43,7 @@
 | Streaming | Passed; live SSE emitted token events followed by exactly one verified done event |
 | Browser QA | Passed at desktop and 375×812; no horizontal overflow, transcript refresh persistence, Enter/Shift+Enter, About disclosure, and secure citations verified |
 | Safety/edge cases | Empty/over-limit input returns 400; unknown geography and unsupported competitors return deterministic ungrounded responses; injection probe did not leak the system prompt |
+| Free-model selection | Six curated choices; deployed Dots3 request honored the selection, returned a grounded cited answer, disclosed the actual model, and persisted across mobile-width reload |
 
 See [`DEPLOYED-QA.md`](DEPLOYED-QA.md) for the prompt-level record and the explicit observational limitations.
 

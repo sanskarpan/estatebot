@@ -1,7 +1,9 @@
 # OpenRouter Free-Model Research and Selector Decision
 
-**Catalogue checked:** 2026-09-02  
-**Source:** OpenRouter `GET /api/v1/models`  
+**Catalogue checked:** 2026-09-03
+
+**Source:** OpenRouter `GET /api/v1/models`
+
 **Scope:** zero-cost models suitable for EstateBot's grounded text-generation contract
 
 ## Findings

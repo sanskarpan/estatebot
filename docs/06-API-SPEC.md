@@ -83,7 +83,7 @@ Returns the curated free chat models offered by the UI, the automatic-mode prima
     {"id": "google/gemma-4-31b-it:free", "label": "Gemma 4 31B", "free": true}
   ],
   "fallback_enabled": true,
-  "catalog_checked_at": "2026-09-02"
+  "catalog_checked_at": "2026-09-03"
 }
 ```
 
