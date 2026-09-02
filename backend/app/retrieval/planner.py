@@ -177,7 +177,10 @@ def plan_query(db: Database, query: str, history: list[str] | None = None) -> Qu
 
     if not (mentions_darglobal or mentions_wasalt or plan.city or plan.country):
         unknown_source = re.search(r"\bfrom\s+([a-z][a-z0-9-]{2,30})\b", lower)
-        if unknown_source and re.search(r"\b(?:projects?|properties|listings?)\b", lower):
+        if unknown_source and re.search(
+            r"\b(?:projects?|properties|listings?|homes?|houses?|villas?|apartments?|flats?|plots?|land)\b",
+            lower,
+        ):
             candidate = unknown_source.group(1)
             if candidate not in {"where", "which", "the", "your", "this", "that"}:
                 plan.unsupported_entity_mentioned = candidate

@@ -172,6 +172,10 @@ def test_source_typo_is_resolved_and_unknown_source_is_not_silently_ignored(db):
     assert unknown.chunks == []
     assert "couldn't identify 'dware'" in (unknown.no_match_reason or "")
 
+    property_type_unknown = RetrievalService(db).retrieve("Show me villas from madeuphomes")
+    assert property_type_unknown.chunks == []
+    assert "couldn't identify 'madeuphomes'" in (property_type_unknown.no_match_reason or "")
+
 
 def test_number_without_price_language_does_not_activate_unfiltered_structured_results(db):
     result = RetrievalService(db).retrieve("asdf qwer 987")
