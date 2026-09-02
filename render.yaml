@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: estatebot-assessment
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PORT
+        value: "8000"
+      - key: DATABASE_PATH
+        value: /app/data/estatebot.db
+      - key: INDEX_PATH
+        value: /app/data/index
+      - key: RAW_SNAPSHOT_DIR
+        value: /app/data/raw
+      - key: SEED_CORPUS_PATH
+        value: /app/seed_corpus.json
+      - key: SEED_ON_EMPTY
+        value: "true"
+      - key: RETRIEVAL_MODE
+        value: bm25_only
+      - key: OPENROUTER_MODEL_PRIMARY
+        value: google/gemma-4-31b-it:free
+      - key: OPENROUTER_MODEL_FALLBACK_1
+        value: z-ai/glm-5.2:free
+      - key: OPENROUTER_MODEL_FALLBACK_2
+        value: minimax/minimax-m3:free
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_HTTP_REFERER
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://estatebot-assessment.onrender.com

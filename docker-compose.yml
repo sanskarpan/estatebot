@@ -1,0 +1,56 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "${PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_PATH: /app/data/estatebot.db
+      INDEX_PATH: /app/data/index
+      RAW_SNAPSHOT_DIR: /app/data/raw
+      SEED_CORPUS_PATH: /app/seed_corpus.json
+    volumes:
+      - estatebot_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  scraper:
+    build:
+      context: .
+      dockerfile: scraper/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_PATH: /app/data/estatebot.db
+      INDEX_PATH: /app/data/index
+      RAW_SNAPSHOT_DIR: /app/data/raw
+      SEED_CORPUS_PATH: /app/seed_corpus.json
+    volumes:
+      - estatebot_data:/app/data
+    profiles: ["tools"]
+
+  ingestion:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_PATH: /app/data/estatebot.db
+      INDEX_PATH: /app/data/index
+      RAW_SNAPSHOT_DIR: /app/data/raw
+      SEED_CORPUS_PATH: /app/seed_corpus.json
+    volumes:
+      - estatebot_data:/app/data
+    profiles: ["tools"]
+    command: ["python", "-m", "ingestion.build_index"]
+
+volumes:
+  estatebot_data:

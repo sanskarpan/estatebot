@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+node_modules
+data/raw
+data/*.db
+data/vector_store
+.DS_Store
