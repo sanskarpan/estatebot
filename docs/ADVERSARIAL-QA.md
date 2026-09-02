@@ -1,7 +1,7 @@
 # Adversarial Product QA
 
 **Run date:** 2026-09-03  
-**Target:** local application using the full 248-record seed; public-release recheck pending the next release  
+**Target:** local application and the public release using the full 248-record seed
 **Purpose:** test the product as a hostile or unpredictable reviewer would, beyond nominal unit paths
 
 ## 1. Defects found and corrected
@@ -14,6 +14,7 @@
 | High | `asdf qwer 987` | An unrelated number activated unfiltered structured retrieval | Numeric parsing now requires price/budget/currency context |
 | Medium | `List projects from Dargloabl.` | Source typo became an unscoped mixed-source request | Conservative fuzzy recognition for close DarGlobal/Wasalt typos |
 | Medium | `List projects from dware.` | Unknown source silently became an unscoped project query | Explicit clarification/no-match route for unknown `from <source>` wording |
+| Medium | `Show me villas from madeuphomes.` | The unknown-source guard only recognized generic project/property nouns, so a property-type query returned unrelated unscoped villas | Expanded unknown-source recognition across homes, houses, villas, apartments, flats, plots, and land |
 | Medium | Prompt-extraction request with provider unavailable | Request fell into lexical retrieval and returned unrelated company/property facts | Deterministic refusal before retrieval/model generation |
 | Medium | Model citation markers wrapped in parentheses | Marker removal left visible empty `()` | Remove empty wrapper punctuation and normalize adjacent spacing |
 | Medium | Blank Enter submission | Native `required` validation produced an orange outline and browser tooltip | Removed conflicting native requirement; retained disabled Send and application guard |
@@ -84,15 +85,19 @@ The suite now covers:
 - conversation ID length bounds and normalized invalid-model errors;
 - blank-composer behavior, true reset hooks, property-card rendering contracts, and image fallback.
 
-## 6. Remaining release checks
+## 6. Public release validation
 
-The following require the updated build to reach the public service before they can be marked complete:
+The released build was checked again over HTTPS and through a fresh in-app browser session:
 
-- selected-model authenticated inference with the enriched citation payload;
-- real generated answer cleanup for parenthesized citation markers;
-- public rich-card image loading and canonical card destinations;
-- public new-chat isolation and neutral coverage copy;
-- public desktop/mobile regression and security-header confirmation;
-- CI/container smoke checks against this exact revision.
+- greeting and neutral coverage routes returned deterministic responses with no false source label;
+- `Show me villas from madeuphomes` returned an explicit clarification instead of unrelated records;
+- a generic villa request rendered eight responsive property cards split evenly across DarGlobal and Wasalt;
+- six available remote property images loaded at their natural dimensions; cards without usable imagery retained a clean fallback;
+- the model menu exposed Auto plus six free models and remained inside the mobile viewport;
+- selecting Gemma 4 31B changed the request preference; when the free route was unavailable, the successful MiniMax M3 fallback was disclosed in the answer attribution;
+- New chat cleared the transcript, draft, transient state, and conversation context while retaining the intentional model preference;
+- the textarea had no native validation state, tooltip, or orange inner focus rectangle;
+- all cards and the composer remained within the mobile viewport with no document overflow;
+- CI passed the 74-test suite, Compose validation, clean image build, seeded boot, and container smoke checks for the released revisions.
 
 Physical/timed limitations remain separate: a native screen-reader session, a deliberately severed public TCP stream, and a complete host idle-window wake have not been claimed as observed tests.

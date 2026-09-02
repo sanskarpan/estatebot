@@ -71,7 +71,7 @@ The 11-message live sample completed without timeouts or crashes. Grounded model
 - The scheduled ten-minute health check is active and its first manual run passed. The free host's complete idle/sleep window was not waited out, so this remains best-effort mitigation rather than an uptime claim.
 - No native screen-reader session was run; semantic browser structure and native control focusability were inspected.
 - A live TCP connection was not deliberately severed mid-stream; automated tests verify that an unverified/incomplete stream is never presented as a grounded answer.
-- A 50-turn visual stress session was not run; client and server history are explicitly bounded.
+- A 51-turn visual stress session was completed in the later adversarial hardening pass; the DOM and restored transcript remained capped at 100 messages.
 
 ## Free-model selector addendum — 2026-09-03
 
@@ -100,3 +100,13 @@ The 11-message live sample completed without timeouts or crashes. Grounded model
 - On the public UI, “What villas are available?” returned eight verified citations split evenly: four DarGlobal Oman projects and four Wasalt Saudi projects. The answer visibly grouped both providers.
 - The clean-container CI smoke check now requires a generic villa answer to contain both source identifiers. Automated coverage increased to 64 passing tests.
 - `.github/workflows/availability-ping.yml` is active on a ten-minute, off-hour-offset schedule and supports manual dispatch. Its first manual run passed against `/api/health`. This is documented as best-effort cold-start mitigation, not an uptime guarantee.
+
+## Adversarial hardening and rich-card addendum — 2026-09-03
+
+- The public release passed the 74-test suite and clean-container CI smoke flow. The release was then exercised directly through HTTPS and a fresh browser session; full cases are recorded in [`ADVERSARIAL-QA.md`](ADVERSARIAL-QA.md).
+- Greeting, neutral coverage, unsupported geography/developer, prompt extraction, malformed source wording, numeric gibberish, suffix currencies, fresh-topic context isolation, and referential follow-ups were all rechecked.
+- Public QA found and corrected one additional wording gap: `Show me villas from madeuphomes` now asks the user to clarify the source instead of returning unrelated generic villas.
+- Generic villa results rendered eight structured cards: four DarGlobal and four Wasalt. Six remote property images loaded successfully; canonical links, metadata, currency labels, and image fallbacks were inspected.
+- The textarea no longer uses native required validation and its accessible composer-level focus state replaces the former orange inner rectangle and browser tooltip.
+- The seven-option model menu stayed inside the mobile viewport. A Gemma 4 31B selection was sent to the public API; when that free route did not complete, the successful MiniMax M3 fallback was visibly and correctly disclosed.
+- New chat cleared messages, draft, transient state, and conversation context while intentionally retaining the selected model preference. Mobile cards and composer remained within the viewport without horizontal overflow.
