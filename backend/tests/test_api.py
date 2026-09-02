@@ -62,6 +62,41 @@ def test_chat_deterministic_mode(db, monkeypatch):
     assert payload["citations"]
 
 
+def test_greeting_is_answered_without_retrieval_failure_or_model_call(db, monkeypatch):
+    class UnexpectedGenerator:
+        async def generate(self, *args, **kwargs):
+            raise AssertionError("a greeting must not call the model")
+
+    monkeypatch.setattr(main, "db", db)
+    monkeypatch.setattr(main, "retrieval", RetrievalService(db, "bm25_only", 8))
+    monkeypatch.setattr(main, "generator", UnexpectedGenerator())
+    main.rate_buckets.clear()
+    response = TestClient(main.app).post("/api/chat", json={"message": "hello"})
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["retrieval_mode"] == "conversation"
+    assert payload["grounded"] is True
+    assert payload["citations"] == []
+    assert payload["model_used"] is None
+    assert "Hello!" in payload["answer"]
+    assert "3 cities in 2 countries" in payload["answer"]
+    main.rate_buckets.clear()
+
+
+def test_coverage_question_lists_all_corpus_locations(db, monkeypatch):
+    monkeypatch.setattr(main, "db", db)
+    main.rate_buckets.clear()
+    response = TestClient(main.app).post("/api/chat", json={"message": "Which locations do you cover?"})
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["retrieval_mode"] == "conversation"
+    assert "Dubai" in payload["answer"]
+    assert "Jeddah" in payload["answer"]
+    assert "Riyadh" in payload["answer"]
+    assert "not a worldwide property search engine" in payload["answer"]
+    main.rate_buckets.clear()
+
+
 def test_unsupported_developer_returns_ungrounded_without_citations(db, monkeypatch):
     monkeypatch.setattr(main, "db", db)
     monkeypatch.setattr(main, "retrieval", RetrievalService(db, "bm25_only", 8))

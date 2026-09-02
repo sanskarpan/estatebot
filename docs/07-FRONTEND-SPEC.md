@@ -26,6 +26,7 @@ A single-page chat interface. No auth, no routing complexity beyond the one scre
 | Streaming response | Tokens append progressively to a growing assistant bubble; citations render once the `done` event arrives. |
 | Non-streaming fallback | If streaming isn't supported/enabled, show typing indicator until the full response arrives, then render at once. |
 | Grounded answer | Normal rendering with citation chips. |
+| Conversational reply | Brief unlabelled assistant response; do not imply that a greeting was retrieved or source-verified. |
 | "Not found in our data" answer (`grounded: false`) | Rendered distinctly (e.g. a subtle icon/label "no matching data found") so the user understands this is an honest gap, not a bug — reinforces the groundedness value prop rather than reading as a broken bot. |
 | Network/timeout error | Distinct error bubble: "Something went wrong reaching EstateBot. [Retry]" — never a blank screen or unhandled console-only error. |
 | Rate limited | Distinct bubble with countdown; composer disabled until countdown ends. |
@@ -47,6 +48,7 @@ A single-page chat interface. No auth, no routing complexity beyond the one scre
 - `prefers-reduced-motion` respected (no forced animation on the typing indicator/token streaming if the user has this preference set).
 - No layout shift when citation chips or the "About" panel load.
 - Visually communicate "this is grounded/sourced," e.g. a small "Sources" label above citation chips, distinct from generic chat-bubble styling — this is a differentiator worth making visually obvious to a reviewer skimming quickly.
+- Response-state labels must be literal: show the serving model for model-backed output, “Source-grounded” only when citations exist, “Corpus summary” for deterministic corpus summaries, and “No matching source data” for honest gaps. Never display a generic “verified” label on an uncited or empty result.
 - Keep the composer compact before typing and fixed within reach without obscuring the latest message. The model choice belongs in its toolbar rather than in a separate settings form.
 - Use a restrained product hierarchy: compact identity/status header, one clear empty-state question, structured prompt cards, readable answer typography, and citations as secondary evidence cards.
 

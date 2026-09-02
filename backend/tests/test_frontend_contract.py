@@ -20,6 +20,9 @@ def test_static_frontend_keeps_resilience_and_accessibility_contracts():
     assert "aboutDialog.showModal()" in javascript
     assert "modelTrigger.focus()" in javascript
     assert "Refresh restored message attribution" in javascript
+    assert "No matching source data" in javascript
+    assert "Verified data response" not in javascript
     assert ":focus-visible" in css
     assert "min-height: 48px" in css
     assert "prefers-reduced-motion" in css
+    assert "overflow-wrap: break-word" in css

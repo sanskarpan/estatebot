@@ -52,7 +52,7 @@ Maintain a small, hand-curated fixture corpus (10–15 representative `Listing`/
 Execute every one of the following, record pass/fail and the actual response (screenshot or copy-paste) in a `qa-results.md` or appendix to `SUBMISSION.md`:
 
 1. Load the URL cold (no prior visit) — confirm the page loads, suggested prompts appear, "About this data" panel shows non-zero corpus stats and a recent `last_scrape_completed_at`.
-2. Ask each of the 9 representative use-case questions from `docs/01-SPEC.md` §4, verbatim — confirm each behaves as specified (correct grounded answer, correct refusal/honesty for the out-of-corpus and adversarial cases).
+2. Ask each of the 11 representative use-case questions from `docs/01-SPEC.md` §4, verbatim — confirm each behaves as specified (correct grounded answer, conversational routing, and correct refusal/honesty for the out-of-corpus and adversarial cases).
 3. Ask a follow-up question relying on conversational context ("what about 3-bedroom units there?") — confirm correct resolution.
 4. Refresh the page mid-conversation — confirm the visible transcript survives (sessionStorage) and/or a new conversation starts cleanly without error.
 5. Submit an empty message — confirm the composer/client blocks it or the server returns a clean `400` surfaced as a friendly inline error, not a crash.

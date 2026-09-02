@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import time
 from collections import defaultdict, deque
 from pathlib import Path
@@ -110,6 +111,43 @@ def _answer_payload(answer: str, citations: list[Any], conversation_id: str, mes
     return ChatResponse(conversation_id=conversation_id, message_id=message_id, answer=answer, citations=citations, model_used=model_used, retrieval_mode=mode, grounded=grounded, response_time_ms=elapsed, degraded=degraded)
 
 
+def _conversational_answer(message: str) -> str | None:
+    normalized = " ".join(re.findall(r"[a-z0-9']+", message.lower()))
+
+    if re.fullmatch(r"(?:hi|hello|hey|hiya|howdy|good (?:morning|afternoon|evening))(?: there)?", normalized):
+        stats = db.stats()
+        return (
+            "Hello! I’m EstateBot. I can help you explore and compare the DarGlobal and Wasalt "
+            f"property corpus across **{len(stats['cities_covered'])} cities in "
+            f"{len(stats['countries_covered'])} countries**. Ask about a location, project, budget, "
+            "property type, or bedroom count."
+        )
+
+    if re.fullmatch(r"(?:thanks|thank you|thankyou|cheers|great thanks|okay thanks|ok thanks)", normalized):
+        return "You’re welcome! Ask me whenever you want to explore another property, project, or location in the corpus."
+
+    if re.fullmatch(r"(?:bye|goodbye|see you|see ya|talk later)", normalized):
+        return "Goodbye! Your conversation will remain available in this browser tab if you return."
+
+    coverage_intent = re.search(
+        r"\b(?:which|what|where|list|show)\b.*\b(?:cities|countries|locations|places|markets|regions)\b|"
+        r"\b(?:cities|countries|locations|places|markets|regions)\b.*\b(?:cover|covered|available|have|support)\b",
+        normalized,
+    )
+    if coverage_intent:
+        stats = db.stats()
+        cities = ", ".join(stats["cities_covered"]) or "No cities recorded"
+        countries = ", ".join(stats["countries_covered"]) or "No countries recorded"
+        return (
+            "EstateBot is not limited to Riyadh. The current scraped corpus covers:\n\n"
+            f"- **Cities:** {cities}\n"
+            f"- **Countries:** {countries}\n\n"
+            "Coverage is limited to active DarGlobal and Wasalt records—it is not a worldwide property search engine."
+        )
+
+    return None
+
+
 async def process_chat(request: Request, body: ChatRequest) -> ChatResponse:
     if body.model and body.model not in settings.selectable_models:
         raise HTTPException(status_code=400, detail={"error": "invalid_model", "message": "Choose one of the available free models."})
@@ -121,34 +159,38 @@ async def process_chat(request: Request, body: ChatRequest) -> ChatResponse:
     history_rows = db.history(conversation_id, settings.chat_history_turns)
     history_text = [row["content"] for row in history_rows if row["role"] == "user"]
     db.add_message(conversation_id, "user", body.message)
-    result = retrieval.retrieve(body.message, history_text)
-    if result.direct_answer:
-        answer = result.direct_answer; citations = []; model_used = None; degraded = False; grounded = True; mode = "structured"
-    elif result.no_match_reason:
-        answer, citations = deterministic_answer(body.message, result.chunks, reason=result.no_match_reason)
-        model_used = None; degraded = False; grounded = False; mode = "none"
+    conversational_answer = _conversational_answer(body.message)
+    if conversational_answer:
+        answer = conversational_answer; citations = []; model_used = None; degraded = False; grounded = True; mode = "conversation"
     else:
-        generation = await generator.generate(body.message, result.chunks, [{"role": row["role"], "content": row["content"]} for row in history_rows], preferred_model=body.model)
-        if generation.degraded:
-            answer, citations = deterministic_answer(body.message, result.chunks)
-            model_used = None; degraded = True; grounded = bool(citations); mode = settings.retrieval_mode
+        result = retrieval.retrieve(body.message, history_text)
+        if result.direct_answer:
+            answer = result.direct_answer; citations = []; model_used = None; degraded = False; grounded = True; mode = "structured"
+        elif result.no_match_reason:
+            answer, citations = deterministic_answer(body.message, result.chunks, reason=result.no_match_reason)
+            model_used = None; degraded = False; grounded = False; mode = "none"
         else:
-            answer, citations, valid = verify_and_extract(generation.answer, result.chunks)
-            if not valid:
-                retry = await generator.generate(body.message, result.chunks, [{"role": row["role"], "content": row["content"]} for row in history_rows], strict=True, preferred_model=body.model)
-                if retry.degraded:
-                    answer, citations = deterministic_answer(body.message, result.chunks)
-                    model_used = None; degraded = True; grounded = bool(citations)
-                else:
-                    answer, citations, valid = verify_and_extract(retry.answer, result.chunks)
-                    if not valid:
+            generation = await generator.generate(body.message, result.chunks, [{"role": row["role"], "content": row["content"]} for row in history_rows], preferred_model=body.model)
+            if generation.degraded:
+                answer, citations = deterministic_answer(body.message, result.chunks)
+                model_used = None; degraded = True; grounded = bool(citations); mode = settings.retrieval_mode
+            else:
+                answer, citations, valid = verify_and_extract(generation.answer, result.chunks)
+                if not valid:
+                    retry = await generator.generate(body.message, result.chunks, [{"role": row["role"], "content": row["content"]} for row in history_rows], strict=True, preferred_model=body.model)
+                    if retry.degraded:
                         answer, citations = deterministic_answer(body.message, result.chunks)
                         model_used = None; degraded = True; grounded = bool(citations)
                     else:
-                        model_used = retry.model_used; degraded = False; grounded = True
-            else:
-                model_used = generation.model_used; degraded = False; grounded = True
-            mode = settings.retrieval_mode
+                        answer, citations, valid = verify_and_extract(retry.answer, result.chunks)
+                        if not valid:
+                            answer, citations = deterministic_answer(body.message, result.chunks)
+                            model_used = None; degraded = True; grounded = bool(citations)
+                        else:
+                            model_used = retry.model_used; degraded = False; grounded = True
+                else:
+                    model_used = generation.model_used; degraded = False; grounded = True
+                mode = settings.retrieval_mode
     elapsed = int((time.monotonic() - started) * 1000)
     citation_dicts = [c.model_dump(mode="json") for c in citations]
     message_id = db.add_message(conversation_id, "assistant", answer, citation_dicts, model_used)

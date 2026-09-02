@@ -187,11 +187,12 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 1.8; strok
 }
 .message.user .avatar { display: none; }
 .message-content { min-width: 0; }
+.message.user .message-content { width: 100%; text-align: right; }
 .message-head { display: flex; align-items: center; gap: 8px; min-height: 26px; margin-bottom: 5px; }
 .message-head strong { font-size: 13px; }
 .message-model { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .bubble { color: var(--ink); font-size: 15px; line-height: 1.68; overflow-wrap: anywhere; }
-.message.user .bubble { max-width: min(82%, 620px); padding: 10px 14px; border-radius: 17px 17px 5px 17px; background: #e8efeb; color: #26342f; line-height: 1.5; }
+.message.user .bubble { display: inline-block; width: fit-content; max-width: min(82%, 620px); padding: 10px 14px; border-radius: 17px 17px 5px 17px; background: #e8efeb; color: #26342f; line-height: 1.5; overflow-wrap: break-word; text-align: left; word-break: normal; }
 .bubble p { margin: 0 0 11px; }
 .bubble p:last-child { margin-bottom: 0; }
 .bubble ul { margin: 7px 0 12px; padding-left: 21px; }

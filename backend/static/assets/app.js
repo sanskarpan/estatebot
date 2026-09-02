@@ -159,10 +159,14 @@ function renderMessage(message) {
     } else if (message.model_used) {
       const fallback = message.requested_model && message.requested_model !== message.model_used;
       meta.textContent = `· ${modelLabel(message.model_used)}${fallback ? ' fallback' : ''}`;
-    } else if (!message.error) {
-      meta.textContent = '· Verified data response';
+    } else if (message.grounded === false && !message.error) {
+      meta.textContent = '· No matching source data';
+    } else if (message.citations?.length) {
+      meta.textContent = '· Source-grounded';
+    } else if (message.retrieval_mode === 'structured') {
+      meta.textContent = '· Corpus summary';
     }
-    head.appendChild(meta);
+    if (meta.textContent) head.appendChild(meta);
     content.appendChild(head);
   }
 
@@ -229,7 +233,7 @@ function renderMessage(message) {
     content.appendChild(sources);
   }
 
-  if (message.role === 'assistant' && !message.typing && !message.error) {
+  if (message.role === 'assistant' && !message.typing && !message.error && (message.model_used || message.citations?.length || message.retrieval_mode === 'structured')) {
     const actions = document.createElement('div');
     actions.className = 'message-actions';
     const copy = document.createElement('button');
@@ -247,12 +251,17 @@ function renderMessage(message) {
 
 function renderEmptyState() {
   const count = state.stats?.listings_total;
+  const cityCount = state.stats?.cities_covered?.length;
+  const countryCount = state.stats?.countries_covered?.length;
+  const coverage = cityCount && countryCount
+    ? ` spanning <strong>${cityCount} cities in ${countryCount} countries</strong>`
+    : '';
   chatLog.innerHTML = `
     <div class="empty-state">
       <span class="empty-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6.5 14.3 16 6l9.5 8.3v10.2a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2V14.3Z"/><path d="M12.5 26.5v-8h7v8M4 16l12-10.5L28 16"/></svg></span>
       <p class="eyebrow">SOURCE-GROUNDED PROPERTY SEARCH</p>
       <h1>Where would you like to explore?</h1>
-      <p>Ask naturally about cities, projects, prices, bedrooms, or comparisons across <strong>${count ? `${count} verified records` : 'DarGlobal and Wasalt'}</strong>.</p>
+      <p>Ask naturally about cities, projects, prices, bedrooms, or comparisons across <strong>${count ? `${count} verified records` : 'DarGlobal and Wasalt'}</strong>${coverage}.</p>
     </div>`;
 }
 
@@ -326,7 +335,7 @@ async function loadStats() {
     if (!statsResponse.ok || !healthResponse.ok) throw new Error('service unavailable');
 
     const stats = await statsResponse.json();
-    const health = await healthResponse.json();
+    await healthResponse.json();
     state.stats = stats;
 
     status.className = 'corpus-status ready';
@@ -337,9 +346,9 @@ async function loadStats() {
     addStat(container, stats.listings_total ?? 0, 'properties & projects');
     addStat(container, stats.content_documents_total ?? 0, 'supporting documents');
     addStat(container, (stats.cities_covered || []).length, 'cities covered');
+    addStat(container, (stats.countries_covered || []).length, 'countries covered');
     addStat(container, 2, 'public sources');
     addStat(container, state.models.length || 6, 'free AI models');
-    addStat(container, health.retrieval_mode === 'bm25_only' ? 'Indexed' : 'Ready', 'search status');
 
     $('last-scrape').textContent = `Last data capture: ${stats.last_scrape_completed_at ? new Date(stats.last_scrape_completed_at).toLocaleString() : 'not recorded'}.`;
     banner('');
@@ -567,6 +576,8 @@ async function sendMessage(text) {
       grounded: final.grounded,
       model_used: final.model_used,
       requested_model: requestedModel,
+      retrieval_mode: final.retrieval_mode,
+      degraded: final.degraded,
     });
   } catch (error) {
     state.messages = state.messages.filter((message) => !message.typing);
