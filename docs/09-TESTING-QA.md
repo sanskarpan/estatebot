@@ -5,7 +5,7 @@
 | Layer | Tooling | Scope |
 |---|---|---|
 | Unit | `pytest` (backend/scraper), a JS test runner if the frontend has non-trivial logic | Parsers (HTML → raw dict), normalizers (currency/unit/location parsing), schema validators, intent classifier (§3.1 in `docs/05-CHATBOT-RAG-SPEC.md`), citation verifier, retrieval query-builder. |
-| Integration | `pytest` with a test SQLite DB + a small fixture vector store; mocked OpenRouter responses | `/api/chat` end-to-end against a known fixture corpus (no live network calls to OpenRouter or the scrape targets in CI); `/api/health`, `/api/stats`, `/api/listings/*`. |
+| Integration | `pytest` with a test SQLite/FTS5 database and mocked OpenRouter responses | `/api/chat` end-to-end against a known fixture corpus (no live network calls to OpenRouter or scrape targets in CI); `/api/health`, `/api/stats`, `/api/models`, and `/api/listings/*`. |
 | Contract/schema | `pytest` + `jsonschema` | Scraper output validated against `docs/04-DATA-SCHEMA.md`'s JSON Schema on every scraper unit test and as a CI gate before ingestion runs. |
 | End-to-end (manual, mandatory) | Human/AI-assisted manual script against the **deployed** URL | §4 below — cannot be fully automated away given live LLM variability, but must be executed and its results recorded before submission. |
 | Load/perf (lightweight) | `hey`/`ab`/simple `asyncio` script | Confirm rate limiting (§6 in `docs/06-API-SPEC.md`) actually triggers under burst load and that the server degrades gracefully rather than crashing. |
@@ -26,8 +26,12 @@
 **Retrieval**
 - Intent classifier correctly flags "cheapest villa in Riyadh under 2 million SAR" as price+city+category constrained.
 - Structured filter query returns correct, correctly-ordered results against a fixture DB (numeric sort correctness, especially `NULL` prices excluded from "cheapest" ranking rather than sorting as 0).
-- Vector search returns the expected fixture chunk for a semantically-phrased query with no exact keyword overlap.
-- A query with zero structured matches and low vector similarity returns the "not found" path, not a forced answer.
+- FTS5/BM25 returns the expected fixture chunk for a lexical query and preserves source identity.
+- A query with zero structured matches does not fall through to unrelated lexical results.
+- Generic source-unspecified queries include both DarGlobal and Wasalt when both match.
+- Self-contained turns do not inherit stale source/location constraints; referential follow-ups inherit only the immediately previous user turn.
+- Source-name typos are handled conservatively and unknown `from <source>` wording asks for clarification.
+- Currency tokens after an amount (for example, `2 million AED`) still constrain the currency correctly.
 
 **Generation/citation**
 - Citation verifier accepts a response citing only IDs present in the current turn's retrieved set.
@@ -37,7 +41,7 @@
 
 **API**
 - `POST /api/chat` with empty message → `400`.
-- `POST /api/chat` with a 3000-character message → `400` (over the cap).
+- `POST /api/chat` with a 2,001-character message or overlong conversation ID → `400` (over the cap).
 - `POST /api/chat` burst beyond the rate limit → `429` with `Retry-After`.
 - `GET /api/health` reflects an accurate `listings_total` matching the fixture DB.
 - `GET /api/listings/{source_site}/{source_id}` for a soft-deleted record → `410`.
@@ -75,4 +79,4 @@ Execute every one of the following, record pass/fail and the actual response (sc
 - All 17 manual QA script items executed against the **live deployed URL** (not just localhost) with results recorded.
 - Any failed/skipped item is either fixed before submission or explicitly documented as a known limitation in `SUBMISSION.md` §Known limitations — never silently omitted.
 
-The requirement-by-requirement evidence map is maintained in [`EDGE-CASE-TRACEABILITY.md`](EDGE-CASE-TRACEABILITY.md). Update that matrix whenever a test or implementation path changes.
+The requirement-by-requirement evidence map is maintained in [`EDGE-CASE-TRACEABILITY.md`](EDGE-CASE-TRACEABILITY.md). The expanded destructive/adversarial run is recorded in [`ADVERSARIAL-QA.md`](ADVERSARIAL-QA.md). Update both when a test or implementation path changes.

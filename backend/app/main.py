@@ -111,6 +111,37 @@ def _answer_payload(answer: str, citations: list[Any], conversation_id: str, mes
     return ChatResponse(conversation_id=conversation_id, message_id=message_id, answer=answer, citations=citations, model_used=model_used, retrieval_mode=mode, grounded=grounded, response_time_ms=elapsed, degraded=degraded)
 
 
+def _property_citations(citations: list[Any]) -> list[Any]:
+    enriched = []
+    for citation in citations:
+        source_site = citation.source_site.value if hasattr(citation.source_site, "value") else str(citation.source_site)
+        row = db.get_listing(source_site, citation.source_id)
+        if row is None:
+            enriched.append(citation)
+            continue
+        item = row_to_listing(row)
+        images = [
+            url for url in item.get("image_urls", [])
+            if not re.search(r"(?:logo|icon-|appstore|googleplay|visa|mastercard|ministry)", url, re.I)
+        ]
+        location = ", ".join(dict.fromkeys(
+            value for value in (item.get("location_area"), item.get("location_city"), item.get("location_country")) if value
+        )) or None
+        price = item.get("price_display_text")
+        currency = item.get("price_currency")
+        if price and currency and currency.lower() not in str(price).lower():
+            price = f"{price} {currency}"
+        enriched.append(citation.model_copy(update={
+            "record_type": item.get("record_type"),
+            "location": location,
+            "property_category": item.get("property_category"),
+            "price": price,
+            "bedrooms": item.get("bedrooms"),
+            "image_url": images[0] if images else None,
+        }))
+    return enriched
+
+
 def _conversational_answer(message: str) -> str | None:
     normalized = " ".join(re.findall(r"[a-z0-9']+", message.lower()))
 
@@ -129,9 +160,12 @@ def _conversational_answer(message: str) -> str | None:
     if re.fullmatch(r"(?:bye|goodbye|see you|see ya|talk later)", normalized):
         return "Goodbye! Your conversation will remain available in this browser tab if you return."
 
+    if re.search(r"\b(?:reveal|show|print|repeat|give)\b.*\b(?:system|developer|hidden|original)\s+(?:prompt|instructions?)\b|\bignore\b.*\b(?:instructions?|prompt)\b", normalized):
+        return "I can’t provide hidden instructions. I can help you explore the DarGlobal and Wasalt property data instead."
+
     coverage_intent = re.search(
-        r"\b(?:which|what|where|list|show)\b.*\b(?:cities|countries|locations|places|markets|regions)\b|"
-        r"\b(?:cities|countries|locations|places|markets|regions)\b.*\b(?:cover|covered|available|have|support)\b",
+        r"\b(?:which|what|where|list|show|give|tell)\b.*\b(?:city|cities|country|countries|locations?|places?|markets?|regions?)\b|"
+        r"\b(?:city|cities|country|countries|locations?|places?|markets?|regions?)\b.*\b(?:cover|covered|available|have|support)\b",
         normalized,
     )
     if coverage_intent:
@@ -139,7 +173,7 @@ def _conversational_answer(message: str) -> str | None:
         cities = ", ".join(stats["cities_covered"]) or "No cities recorded"
         countries = ", ".join(stats["countries_covered"]) or "No countries recorded"
         return (
-            "EstateBot is not limited to Riyadh. The current scraped corpus covers:\n\n"
+            "The current EstateBot corpus covers:\n\n"
             f"- **Cities:** {cities}\n"
             f"- **Countries:** {countries}\n\n"
             "Coverage is limited to active DarGlobal and Wasalt records—it is not a worldwide property search engine."
@@ -192,6 +226,7 @@ async def process_chat(request: Request, body: ChatRequest) -> ChatResponse:
                     model_used = generation.model_used; degraded = False; grounded = True
                 mode = settings.retrieval_mode
     elapsed = int((time.monotonic() - started) * 1000)
+    citations = _property_citations(citations)
     citation_dicts = [c.model_dump(mode="json") for c in citations]
     message_id = db.add_message(conversation_id, "assistant", answer, citation_dicts, model_used)
     return _answer_payload(answer, citations, conversation_id, message_id, model_used, mode, grounded, elapsed, degraded)
@@ -206,6 +241,8 @@ async def chat(request: Request, body: ChatRequest):
             detail = exc.detail if isinstance(exc.detail, dict) else {"error": "rate_limited"}
             retry = int(detail.get("retry_after_seconds", 60))
             return JSONResponse(status_code=429, headers={"Retry-After": str(retry)}, content={"error": "rate_limited", "retry_after_seconds": retry})
+        if isinstance(exc.detail, dict):
+            return JSONResponse(status_code=exc.status_code, content=exc.detail)
         raise
     except Exception as exc:
         logger.exception("chat_failed", extra={"error": str(exc)})

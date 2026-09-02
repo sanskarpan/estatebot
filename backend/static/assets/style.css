@@ -224,6 +224,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 1.8; strok
 .message-action:hover { color: var(--ink); background: var(--surface-soft); }
 .retry-button { min-height: 36px; margin-top: 10px; padding: 0 13px; border: 1px solid #ddb8b8; border-radius: 9px; background: white; color: var(--error); cursor: pointer; font-size: 12px; font-weight: 700; }
 .sources { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin-top: 14px; }
+.sources.has-property-cards { grid-template-columns: repeat(auto-fit, minmax(225px, 1fr)); gap: 10px; }
 .sources-label { grid-column: 1 / -1; margin-bottom: 1px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
 .citation { min-width: 0; display: grid; grid-template-columns: 28px 1fr 14px; align-items: center; gap: 8px; padding: 8px 9px; border: 1px solid var(--line); border-radius: 11px; background: rgba(255, 255, 255, .78); color: var(--ink-soft); text-decoration: none; }
 .citation:hover { border-color: #b9c9c1; background: white; }
@@ -232,6 +233,20 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 1.8; strok
 .citation-copy strong { overflow: hidden; font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .citation-copy small { color: var(--muted); font-size: 9px; text-transform: capitalize; }
 .citation svg { width: 13px; height: 13px; color: var(--muted); }
+.property-card { display: flex; overflow: hidden; padding: 0; border-radius: 15px; background: var(--surface); box-shadow: var(--shadow-sm); transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+.property-card:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(20,36,31,.1); }
+.property-media { position: relative; width: 116px; min-height: 128px; flex: none; overflow: hidden; background: linear-gradient(145deg, #dce8e3, #edf1ec); }
+.property-media.image-unavailable::before { content: "⌂"; position: absolute; inset: 0; display: grid; place-items: center; color: rgba(23,107,93,.42); font-size: 32px; }
+.property-media img { width: 100%; height: 100%; display: block; object-fit: cover; transition: transform .22s ease; }
+.property-card:hover .property-media img { transform: scale(1.025); }
+.property-source { position: absolute; top: 8px; left: 8px; max-width: calc(100% - 16px); padding: 3px 7px; overflow: hidden; border: 1px solid rgba(255,255,255,.45); border-radius: 999px; background: rgba(20,35,30,.78); color: white; font-size: 8px; font-weight: 800; letter-spacing: .05em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; backdrop-filter: blur(8px); }
+.property-card-body { min-width: 0; flex: 1; display: flex; flex-direction: column; padding: 11px 11px 9px; }
+.property-card-body > strong { display: -webkit-box; overflow: hidden; color: var(--ink); font-size: 12px; font-weight: 760; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.property-location { display: -webkit-box; overflow: hidden; margin-top: 4px; color: var(--muted); font-size: 9px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.property-facts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.property-facts > span { max-width: 100%; padding: 2px 6px; overflow: hidden; border-radius: 999px; background: var(--surface-soft); color: var(--ink-soft); font-size: 8px; font-weight: 650; text-overflow: ellipsis; text-transform: capitalize; white-space: nowrap; }
+.property-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 8px; color: var(--accent); font-size: 9px; font-weight: 750; }
+.property-footer svg { width: 12px; height: 12px; color: inherit; }
 
 .composer-dock {
   z-index: 15;
@@ -444,6 +459,7 @@ textarea::placeholder { color: #8a9490; }
   .avatar { width: 30px; height: 30px; border-radius: 9px; }
   .message.user .bubble { max-width: 91%; }
   .sources { grid-template-columns: 1fr; }
+  .property-media { width: 105px; min-height: 122px; }
   .composer-dock { padding-right: 10px; padding-bottom: max(8px, env(safe-area-inset-bottom)); padding-left: 10px; }
   .composer { border-radius: 17px; }
   .grounded-label, .keyboard-hint { display: none; }

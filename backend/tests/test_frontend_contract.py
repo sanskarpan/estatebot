@@ -11,6 +11,7 @@ def test_static_frontend_keeps_resilience_and_accessibility_contracts():
     assert 'aria-live="polite"' in html
     assert 'aria-controls="about-dialog"' in html
     assert '<dialog id="about-dialog"' in html
+    assert 'placeholder="Ask about a property, city, price, or project…" required' not in html
     assert 'aria-haspopup="menu"' in html
     assert 'rel="noopener noreferrer"' in html
     assert "MAX_VISIBLE_MESSAGES = 100" in javascript
@@ -21,8 +22,13 @@ def test_static_frontend_keeps_resilience_and_accessibility_contracts():
     assert "modelTrigger.focus()" in javascript
     assert "Refresh restored message attribution" in javascript
     assert "No matching source data" in javascript
+    assert "property-card" in javascript
+    assert "image.addEventListener('error'" in javascript
     assert "Verified data response" not in javascript
+    assert "state.conversationId = null" in javascript
+    assert "input.value = ''" in javascript
     assert ":focus-visible" in css
     assert "min-height: 48px" in css
     assert "prefers-reduced-motion" in css
     assert "overflow-wrap: break-word" in css
+    assert ".property-media" in css

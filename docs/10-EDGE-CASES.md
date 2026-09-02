@@ -48,7 +48,7 @@ Exhaustive, categorized list of edge cases the implementation must handle. Each 
 | 3.5 | Query referencing a property that existed at scrape time but is now soft-deleted | Still answer from stored data if directly asked by name, but note it may no longer be listed/active as of the last scrape — don't pretend total ignorance of something once known, and don't present stale data as current without the caveat. |
 | 3.6 | Cross-source comparison query ("DarGlobal vs Wasalt villas in the same city") | Correctly retrieve and represent both sources; citations must show the mixed `source_site` values distinctly, not merge into one undifferentiated answer. |
 | 3.7 | Currency-crossing comparison ("is the DarGlobal Dubai unit cheaper than a Wasalt Riyadh villa") when one is AED/null and the other SAR | Never silently equate different currencies as if numerically comparable; either state both figures with currencies explicit and note conversion wasn't performed, or perform an explicit, clearly-labeled approximate conversion only if the system is built to do so deliberately (not implicitly). |
-| 3.8 | Vector store returns technically-similar but factually-irrelevant chunks (semantic drift) | Relevance threshold (§3.2 in `docs/05-CHATBOT-RAG-SPEC.md`) filters these before they reach the prompt; if borderline, the groundedness system-prompt rule and citation verification are the second and third lines of defense. |
+| 3.8 | Lexical retrieval returns technically-matching but factually-irrelevant chunks | Structured constraints are authoritative and zero structured matches never fall through to unrelated BM25 results; citation verification is the final boundary. |
 | 3.9 | Extremely broad query ("tell me about everything you have") | Should not attempt to cram the entire corpus into one response; respond with a structured overview (counts by source/city/category) and invite narrowing, rather than truncating arbitrarily or erroring on context overflow. |
 | 3.10 | Model context window smaller than the default chunk/history budget (a small free model) | Verify every configured model's live `context_length` before deployment and keep the fixed top-k/per-chunk/history caps below the smallest supported window (§2.3 in `docs/05-CHATBOT-RAG-SPEC.md`); lower the caps before accepting any smaller replacement model. Runtime startup must not depend on the catalog endpoint. |
 
@@ -56,7 +56,7 @@ Exhaustive, categorized list of edge cases the implementation must handle. Each 
 
 | # | Case | Required behaviour |
 |---|---|---|
-| 4.1 | Empty message | `400`, friendly inline handling client-side too (disable send on empty input). |
+| 4.1 | Empty message | `400` at the API; client disables Send and handles Enter without triggering a native browser validation outline/tooltip. |
 | 4.2 | Extremely long message (over cap) | `400` with a clear "message too long" error, not silent truncation (silent truncation could change the user's intended meaning). |
 | 4.3 | Non-English input (Arabic, etc.) | Respond sensibly — either answer if feasible or explain the limitation — never a raw error. |
 | 4.4 | Emoji-only / gibberish input | No crash; a graceful "I'm not sure what you're asking — could you rephrase?" style response. |
@@ -78,7 +78,7 @@ Exhaustive, categorized list of edge cases the implementation must handle. Each 
 | 5.1 | Host free tier sleeps after inactivity | UI cold-start state (§3 in `docs/07-FRONTEND-SPEC.md`); health check timeout tuned accordingly. |
 | 5.2 | Redeploy wipes ephemeral disk (no persistent volume on the free tier) | Documented `predeploy`/release-phase re-ingestion step, or accept and document that data is rebuilt fresh per deploy (§5 in `docs/08-DEPLOYMENT.md`). |
 | 5.3 | `OPENROUTER_API_KEY` missing/invalid at runtime | App still boots and serves the frontend + health/stats endpoints; `/api/chat` returns a clear, structured error (not a crash) explaining the model provider isn't configured — fail loud in logs, fail soft to the user with the deterministic-fact-based degraded response where possible. |
-| 5.4 | Embedding model too large for the host's memory | Automatic/documented fallback to BM25 retrieval (§9 in `docs/05-CHATBOT-RAG-SPEC.md`) rather than an OOM crash. |
+| 5.4 | Retrieval runtime exceeds the host's memory | Use the implemented low-memory BM25/SQLite-FTS5 path; measured runtime must retain comfortable headroom rather than risk an OOM crash. |
 | 5.5 | Concurrent requests from multiple reviewers/testers at once | SQLite's single-writer characteristic must not deadlock reads; use WAL mode or equivalent, and keep write transactions short (chat message logging, not long-held locks during generation). |
 | 5.6 | Corpus is empty (scrape/ingestion never run, or failed entirely) before first deploy | `/api/health` reports `503`/degraded rather than a false `200`; `/api/chat` explains data isn't loaded yet rather than silently answering nothing-grounded as if it were normal "not found" behaviour (these are different failure classes and should be distinguishable in logs even if the user-facing message is similarly graceful). |
 | 5.7 | Clock skew / timezone confusion in `last_scraped_at` display | Store and transmit in UTC ISO-8601; format for display client-side in the user's local time or clearly-labeled UTC — never an ambiguous unlabeled timestamp. |

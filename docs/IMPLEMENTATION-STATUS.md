@@ -6,7 +6,7 @@
 ## What is implemented
 
 - FastAPI service with `/api/chat`, `/api/health`, `/api/stats`, listing lookup, listing search, JSON responses, and buffered/verified SSE responses.
-- Responsive product-grade chat UI with a compact status header, visible 13-city/7-country breadth, structured first-run prompts, citation cards, literal response-state labels, native About dialog, local transcript persistence, streamed-answer feedback, copy/retry states, keyboard-friendly controls, and prompt-injection-safe rendering.
+- Responsive product-grade chat UI with a compact status header, visible 13-city/7-country breadth, structured first-run prompts, image/detail property cards, compact document citations, literal response-state labels, native About dialog, true New chat isolation, local transcript persistence, streamed-answer feedback, copy/retry states, keyboard-friendly controls, and prompt-injection-safe rendering.
 - Pydantic validation and SQLite persistence with WAL mode, foreign keys, JSON fields, FTS5/BM25 chunks, conversation history, scrape-run metadata, composite `(source_site, source_id)` identity, and inactive-record handling (`404` unknown / `410` known inactive).
 - Deterministic conversational routing for greetings and coverage questions, plus query planning for named entities, cross-source comparisons, source, city, country, category, sale/rent, bedrooms, price bounds, currency, and cheapest/most-expensive ordering. Unspecified-source result sets balance DarGlobal and Wasalt candidates; explicit source filters and global price ordering remain authoritative.
 - OpenRouter generation with a curated six-model free menu, plain-language model descriptions, selected-model-first routing, configurable fallback chain, bounded per-attempt/total timeouts, context truncation, citation-marker verification, strict regeneration, actual-model disclosure, and concise deterministic degraded answers when no key/provider is available.
@@ -19,7 +19,7 @@
 
 | Check | Result |
 |---|---|
-| `PYTHONPATH=. .venv/bin/python -m pytest -q` | 64 passed; one upstream Starlette/httpx deprecation warning |
+| `PYTHONPATH=. .venv/bin/python -m pytest -q` | 74 passed; one upstream Starlette/httpx deprecation warning |
 | `docker compose config --quiet` | Passed |
 | API image build | Passed (`estatebot-api:local`) |
 | Fresh-container `/api/health` | HTTP 200; 36 DarGlobal + 212 Wasalt records loaded from seed |
@@ -33,6 +33,7 @@
 | OpenRouter catalog check | All three configured IDs present with zero prompt/completion pricing; context windows 262,144 / 256,000 / 1,048,576 tokens |
 | GitHub Actions | Public `main` workflow passed all tests, exact seed-count assertions, Compose validation, container health, and a five-citation Wasalt-project chat smoke check |
 | UI redesign browser QA | Passed at 1280×720 and 375×812: empty state, compact composer, seven-option model menu, selection persistence, native About dialog, cited response state, and mobile overflow were inspected |
+| Adversarial product QA | Structured zero-match leakage, stale context inheritance, suffix-currency parsing, typo/unknown-source routing, prompt extraction, numeric gibberish, citation punctuation, native blank validation, and reset state corrected; 20-request concurrency and 51-turn browser stress passed |
 
 ## Verified public-release evidence
 

@@ -197,11 +197,17 @@ class Citation(BaseModel):
     source_site: SourceSite
     source_url: str
     name: str
+    record_type: str | None = None
+    location: str | None = None
+    property_category: str | None = None
+    price: str | None = None
+    bedrooms: str | None = None
+    image_url: str | None = None
 
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
-    conversation_id: str | None = None
+    conversation_id: str | None = Field(default=None, max_length=128)
     model: str | None = Field(default=None, max_length=160)
 
     @field_validator("message")

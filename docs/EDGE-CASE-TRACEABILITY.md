@@ -1,6 +1,6 @@
 # Edge-case traceability
 
-**Audit date:** 2026-09-02
+**Audit date:** 2026-09-03
 
 This matrix maps every requirement in [`10-EDGE-CASES.md`](10-EDGE-CASES.md) to its strongest current evidence. “Automated” means a repeatable test is part of the local/CI suite. “Inspected” means the implementation path was reviewed. “Deployed QA” refers to the recorded public checks in [`DEPLOYED-QA.md`](DEPLOYED-QA.md).
 
@@ -58,7 +58,7 @@ This matrix maps every requirement in [`10-EDGE-CASES.md`](10-EDGE-CASES.md) to 
 
 | ID | Status | Evidence |
 |---|---|---|
-| 4.1 | Automated | `test_empty_chat_is_400`; required textarea and empty-submit guard. |
+| 4.1 | Automated + browser | `test_empty_chat_is_400`; disabled Send and application-level Enter guard; browser check confirms no native invalid state or validation tooltip. |
 | 4.2 | Automated | `test_overlong_chat_is_rejected`; textarea `maxlength=2000`. |
 | 4.3 | Automated + deployed QA | Arabic input returned a grounded Arabic answer with eight verified citations. |
 | 4.4 | Automated | Emoji-only input returns a graceful non-error response. |
@@ -70,7 +70,7 @@ This matrix maps every requirement in [`10-EDGE-CASES.md`](10-EDGE-CASES.md) to 
 | 4.10 | Static contract; deployed network-drop QA pending | Client rejects a stream without the verified `done` event, renders an ungrounded interrupted/error state, and offers Retry. |
 | 4.11 | Inspected | No mutable answer cache; structured retrieval and citations remain fact-consistent across repeats. |
 | 4.12 | Automated/static | Root-serving test plus visible `<noscript>` fallback. |
-| 4.13 | Automated + deployed browser | Server history is bounded; deployed transcript restoration works and client transcripts are capped at 100 messages. A 50-turn visual stress session was not run. |
+| 4.13 | Automated + browser | Server history is bounded; a 51-turn mobile browser run trimmed cleanly to 100 visible messages, survived refresh, and reset without overflow or stale state. |
 | 4.14 | Automated + deployed regression | Unsupported developers are deterministically rejected before BM25/model generation, with `grounded=false`, no citations, and no unrelated model knowledge. |
 
 ## Infrastructure and deployment
@@ -96,4 +96,4 @@ This matrix maps every requirement in [`10-EDGE-CASES.md`](10-EDGE-CASES.md) to 
 
 ## Remaining observational limits
 
-No row is silently treated as proven by a unit test when it needs a particular physical or timed condition. The remaining evidence gaps are a complete host idle-window cold start, a native assistive-technology session, a deliberately dropped live network stream, and a 50-turn visual stress session. Their implemented recovery/bounding paths are automated or inspected, and the gaps are disclosed in `SUBMISSION.md`.
+No row is silently treated as proven by a unit test when it needs a particular physical or timed condition. A scheduled ten-minute health check is active and manually verified as best-effort cold-start mitigation. The remaining evidence gaps are a complete host idle-window cold start, a native assistive-technology session, and a deliberately dropped live network stream. Their implemented recovery/bounding paths are automated or inspected, and the gaps are disclosed in `SUBMISSION.md`.

@@ -203,6 +203,7 @@ function renderMessage(message) {
   if (message.citations?.length) {
     const sources = document.createElement('div');
     sources.className = 'sources';
+    if (message.citations.some((citation) => citation.record_type)) sources.classList.add('has-property-cards');
     const label = document.createElement('span');
     label.className = 'sources-label';
     label.textContent = `${message.citations.length} source${message.citations.length === 1 ? '' : 's'}`;
@@ -210,21 +211,73 @@ function renderMessage(message) {
 
     message.citations.forEach((citation) => {
       const link = document.createElement('a');
-      link.className = 'citation';
+      link.className = `citation ${citation.record_type ? 'property-card' : ''}`;
       link.href = citation.source_url;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       link.setAttribute('aria-label', `Open source: ${citation.name || citation.source_id}`);
 
+      const sourceName = citation.source_site === 'darglobal' ? 'DarGlobal' : 'Wasalt';
       const site = document.createElement('span');
       site.className = 'citation-site';
       site.textContent = citation.source_site === 'darglobal' ? 'DG' : 'W';
+
+      if (citation.record_type) {
+        const media = document.createElement('span');
+        media.className = 'property-media';
+        if (citation.image_url) {
+          const image = document.createElement('img');
+          image.src = citation.image_url;
+          image.alt = '';
+          image.loading = 'lazy';
+          image.referrerPolicy = 'no-referrer';
+          image.addEventListener('error', () => {
+            image.remove();
+            media.classList.add('image-unavailable');
+          });
+          media.appendChild(image);
+        } else {
+          media.classList.add('image-unavailable');
+        }
+        const sourceBadge = document.createElement('span');
+        sourceBadge.className = 'property-source';
+        sourceBadge.textContent = sourceName;
+        media.appendChild(sourceBadge);
+
+        const cardBody = document.createElement('span');
+        cardBody.className = 'property-card-body';
+        const title = document.createElement('strong');
+        title.textContent = citation.name || citation.source_id;
+        const location = document.createElement('span');
+        location.className = 'property-location';
+        location.textContent = citation.location || 'Location not published';
+        const facts = document.createElement('span');
+        facts.className = 'property-facts';
+        [citation.property_category?.replaceAll('_', ' '), citation.bedrooms, citation.price]
+          .filter(Boolean)
+          .forEach((value) => {
+            const fact = document.createElement('span');
+            fact.textContent = value;
+            facts.appendChild(fact);
+          });
+        const footer = document.createElement('span');
+        footer.className = 'property-footer';
+        footer.textContent = 'View source';
+        footer.insertAdjacentHTML('beforeend', iconMarkup('external'));
+        cardBody.append(title, location);
+        if (facts.childElementCount) cardBody.appendChild(facts);
+        cardBody.appendChild(footer);
+        link.append(media, cardBody);
+        sources.appendChild(link);
+        return;
+      }
+
       const copy = document.createElement('span');
       copy.className = 'citation-copy';
       const title = document.createElement('strong');
       title.textContent = citation.name || citation.source_id;
       const source = document.createElement('small');
-      source.textContent = citation.source_site === 'darglobal' ? 'DarGlobal' : 'Wasalt';
+      source.textContent = sourceName;
       copy.append(title, source);
       link.append(site, copy);
       link.insertAdjacentHTML('beforeend', iconMarkup('external'));
@@ -662,8 +715,12 @@ $('new-chat').addEventListener('click', () => {
   if (state.busy) return;
   state.messages = [];
   state.conversationId = null;
+  input.value = '';
+  banner('');
+  closeModelMenu();
   save();
   render();
+  resizeInput();
   input.focus();
   showToast('New chat started');
 });

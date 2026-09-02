@@ -143,3 +143,52 @@ def test_explicit_wasalt_projects_excludes_individual_listings(db):
     result = RetrievalService(db).retrieve("What projects does Wasalt have in Riyadh?")
     assert result.plan.record_type == "project"
     assert [item["source_id"] for item in result.structured] == ["project-1"]
+
+
+def test_self_contained_turn_does_not_inherit_unrelated_history(db):
+    plan = plan_query(db, "What properties are available in Jeddah?", ["Show me villas in Riyadh"])
+    assert plan.city == "Jeddah"
+    plan = plan_query(db, "Show me apartments", ["Show me villas in Riyadh"])
+    assert plan.city is None
+    assert plan.category == "apartment"
+
+
+def test_referential_follow_up_can_inherit_history(db):
+    plan = plan_query(db, "What about 2-bedroom homes there?", ["Show me properties in Riyadh"])
+    assert plan.city == "Riyadh"
+    assert plan.bedrooms_min == 2
+
+    latest = plan_query(
+        db,
+        "What about 2-bedroom homes there?",
+        ["Show me properties in Riyadh", "Show me apartments in Jeddah"],
+    )
+    assert latest.city == "Jeddah"
+
+
+def test_source_typo_is_resolved_and_unknown_source_is_not_silently_ignored(db):
+    assert plan_query(db, "List projects from Dargloabl").source_site == "darglobal"
+    unknown = RetrievalService(db).retrieve("List projects from dware")
+    assert unknown.chunks == []
+    assert "couldn't identify 'dware'" in (unknown.no_match_reason or "")
+
+
+def test_number_without_price_language_does_not_activate_unfiltered_structured_results(db):
+    result = RetrievalService(db).retrieve("asdf qwer 987")
+    assert result.structured == []
+    assert result.chunks == []
+
+
+def test_currency_suffix_is_parsed_as_a_filter(db):
+    plan = plan_query(db, "Show properties under 2 million AED")
+    assert plan.max_price == 2_000_000
+    assert plan.currency == "AED"
+    result = RetrievalService(db).retrieve("Show properties under 2 million AED")
+    assert all(item.get("price_currency") in {"AED", None} for item in result.structured)
+    assert not any(chunk.source_site == "wasalt" for chunk in result.chunks)
+
+
+def test_structured_chunk_never_drops_known_currency(db):
+    result = RetrievalService(db).retrieve("What is the cheapest villa in Jeddah?")
+    assert result.chunks
+    assert "SAR" in result.chunks[0].text

@@ -71,6 +71,8 @@ class RetrievalService:
         structured = structured_search(self.db, plan, self.max_chunks)
         if plan.structured_intent and not plan.location_recognized:
             return RetrievalResult(plan, [], [], "; ".join(plan.notes))
+        if plan.structured_intent and not structured:
+            return RetrievalResult(plan, [], [], "; ".join(plan.notes) or "No active records matched the requested criteria.")
         exact_keys = {(str(x["source_site"]), str(x["source_id"])) for x in structured}
         # Explicit filters must not be diluted by lexical matches from records
         # outside the structured candidate set. SQL is authoritative for source,
@@ -94,10 +96,13 @@ class RetrievalService:
                     unique_chunks.append(chunk)
                     unique_keys.add(key)
             chunks = unique_chunks
-        if plan.structured_intent and not structured and not chunks:
-            return RetrievalResult(plan, [], [], "No active records matched the requested criteria.")
         if not chunks:
-            return RetrievalResult(plan, [], [], "No relevant active data matched the question.")
+            return RetrievalResult(
+                plan,
+                [],
+                [],
+                "I couldn't find a relevant match in the active DarGlobal and Wasalt data. Try a project, covered location, property type, or budget.",
+            )
         return RetrievalResult(plan, structured, chunks[: self.max_chunks], None)
 
     @staticmethod
@@ -108,6 +113,9 @@ class RetrievalService:
         if item.get("property_category"): facts.append(f"Category: {item['property_category']}.")
         if item.get("price_display_text") or item.get("price_amount"):
             price = item.get("price_display_text") or f"{item['price_amount']} {item.get('price_currency') or ''}"
+            currency = item.get("price_currency")
+            if currency and currency.lower() not in str(price).lower():
+                price = f"{price} {currency}"
             facts.append(f"Price: {price}.")
         if item.get("bedrooms") is not None: facts.append(f"Bedrooms: {item['bedrooms']}.")
         if item.get("description"): facts.append(f"Description: {item['description']}")

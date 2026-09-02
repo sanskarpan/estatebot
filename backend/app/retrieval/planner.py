@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from difflib import SequenceMatcher
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -74,7 +75,15 @@ def _resolve_entity(db: Database, text: str) -> tuple[str, str, str, bool] | Non
 
 
 def _number_amount(value: str, query: str) -> tuple[float | None, str | None]:
-    amount, currency, _ = parse_price(value, "SAR" if "sar" in query.lower() or "riyal" in query.lower() else None)
+    lower_query = query.lower()
+    currencies = {
+        "aed": "AED", "dirham": "AED", "sar": "SAR", "riyal": "SAR",
+        "usd": "USD", "gbp": "GBP", "eur": "EUR", "qar": "QAR", "omr": "OMR",
+    }
+    default_currency = next((code for token, code in currencies.items() if re.search(rf"\b{token}s?\b", lower_query)), None)
+    if "$" in query and default_currency is None:
+        default_currency = "USD"
+    amount, currency, _ = parse_price(value, default_currency)
     if amount is None:
         return None, currency
     lower = query.lower()
@@ -90,7 +99,11 @@ def plan_query(db: Database, query: str, history: list[str] | None = None) -> Qu
     lower = raw.lower()
     plan = QueryPlan()
     known_cities, known_countries = _known_locations(db)
-    effective = " ".join((history or [])[-2:] + [raw])
+    referential = bool(re.search(r"\b(?:there|that|those|these|it|its|them|same|previous|former|latter)\b|\bwhat about\b|^\s*(?:and|also)\b", lower))
+    # Referential language inherits only the immediately preceding user turn.
+    # Pulling multiple turns into deterministic parsing lets an older location
+    # win over the latest one and causes surprising cross-topic leakage.
+    effective = " ".join(((history or [])[-1:] if referential else []) + [raw])
     effective_lower = effective.lower()
 
     if re.search(r"\b(?:news|press release|press releases|announcement|announcements|announced)\b|what(?:'s| is) new", effective_lower):
@@ -102,8 +115,11 @@ def plan_query(db: Database, query: str, history: list[str] | None = None) -> Qu
     if re.search(r"\b(?:everything|overview|entire corpus|all properties|all listings)\b|what do you have", effective_lower):
         plan.overview_intent = True
 
-    mentions_darglobal = "darglobal" in effective_lower or "dar global" in effective_lower
-    mentions_wasalt = "wasalt" in effective_lower
+    words = re.findall(r"[a-z]+", effective_lower)
+    fuzzy_darglobal = any(len(word) >= 6 and SequenceMatcher(None, word, "darglobal").ratio() >= 0.78 for word in words)
+    fuzzy_wasalt = any(len(word) >= 5 and SequenceMatcher(None, word, "wasalt").ratio() >= 0.78 for word in words)
+    mentions_darglobal = "darglobal" in effective_lower or "dar global" in effective_lower or fuzzy_darglobal
+    mentions_wasalt = "wasalt" in effective_lower or fuzzy_wasalt
     if mentions_darglobal and mentions_wasalt:
         plan.cross_source = True
         plan.structured_intent = True
@@ -159,6 +175,16 @@ def plan_query(db: Database, query: str, history: list[str] | None = None) -> Qu
                 plan.structured_intent = True
                 plan.notes.append(f"Location '{candidate}' is not covered by the active corpus.")
 
+    if not (mentions_darglobal or mentions_wasalt or plan.city or plan.country):
+        unknown_source = re.search(r"\bfrom\s+([a-z][a-z0-9-]{2,30})\b", lower)
+        if unknown_source and re.search(r"\b(?:projects?|properties|listings?)\b", lower):
+            candidate = unknown_source.group(1)
+            if candidate not in {"where", "which", "the", "your", "this", "that"}:
+                plan.unsupported_entity_mentioned = candidate
+                plan.notes.append(
+                    f"I couldn't identify '{candidate}' as DarGlobal, Wasalt, or a covered location. Please clarify the source or place."
+                )
+
     category_words = {"villa": "villa", "villas": "villa", "apartment": "apartment", "apartments": "apartment", "flat": "apartment", "flats": "apartment", "land": "land", "plot": "land", "plots": "land", "commercial": "commercial", "hotel": "hotel_room"}
     for word, category in category_words.items():
         if re.search(rf"\b{word}\b", effective_lower):
@@ -178,7 +204,8 @@ def plan_query(db: Database, query: str, history: list[str] | None = None) -> Qu
     if re.search(r"\b(?:more than|at least|minimum of)\s*(\d+)\s*(?:bed|bedroom|br)", effective_lower):
         count = int(re.search(r"\b(?:more than|at least|minimum of)\s*(\d+)", effective_lower).group(1)); plan.bedrooms_min = count + (1 if "more than" in effective_lower else 0); plan.bedrooms_max = None
 
-    nums = re.findall(r"(?:\$|aed|sar|usd|gbp|eur|qar|omr|riyal|dirham)?\s*\d[\d,]*(?:\.\d+)?\s*(?:million|m|thousand|k)?", effective_lower)
+    price_context = re.search(r"\b(?:price|priced|cost|budget|under|below|over|above|between|cheapest|expensive|affordable|aed|sar|usd|gbp|eur|qar|omr|riyal|dirham)\b|\$", effective_lower)
+    nums = re.findall(r"(?:\$|aed|sar|usd|gbp|eur|qar|omr|riyal|dirham)?\s*\d[\d,]*(?:\.\d+)?\s*(?:million|m|thousand|k)?", effective_lower) if price_context else []
     if nums:
         parsed = [_number_amount(x, effective_lower)[0] for x in nums]
         parsed = [x for x in parsed if x]

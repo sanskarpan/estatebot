@@ -6,7 +6,7 @@
 **Configured retrieval:** `bm25_only` with deterministic structured filters  
 **Configured model chain:** `google/gemma-4-31b-it:free` → `z-ai/glm-5.2:free` → `minimax/minimax-m3:free`
 
-This record covers the public release candidate from a fresh browser tab and direct HTTPS API requests. Secrets are not recorded here. Automated provider tests remain mocked in CI; the checks below are supplementary real-network evidence.
+This record covers the public release from a fresh browser tab and direct HTTPS API requests. Secrets are not recorded here. Automated provider tests remain mocked in CI; the checks below are supplementary real-network evidence.
 
 ## Release summary
 
@@ -44,7 +44,7 @@ Observed successful live model responses included `z-ai/glm-5.2:free` and `minim
 
 | # | Result | Record |
 |---:|---|---|
-| 1 | Pass | Fresh page loaded with suggested prompts; About panel showed 248 records, 20 documents, 13 cities, model, and last-scrape time. |
+| 1 | Pass | Fresh page loaded with suggested prompts; the About dialog showed 248 records, 20 documents, 13 cities, 7 countries, 2 sources, 6 models, and last-scrape time. |
 | 2 | Pass | Representative grounded, unsupported, and adversarial prompts behaved as specified; details above. |
 | 3 | Pass | Contextual 3-bedroom follow-up resolved to DG1. |
 | 4 | Pass | Transcript remained visible after browser reload. |
@@ -68,7 +68,7 @@ The 11-message live sample completed without timeouts or crashes. Grounded model
 
 ## Explicit limitations
 
-- The free host's complete idle/sleep window was not waited out during this run.
+- The scheduled ten-minute health check is active and its first manual run passed. The free host's complete idle/sleep window was not waited out, so this remains best-effort mitigation rather than an uptime claim.
 - No native screen-reader session was run; semantic browser structure and native control focusability were inspected.
 - A live TCP connection was not deliberately severed mid-stream; automated tests verify that an unverified/incomplete stream is never presented as a grounded answer.
 - A 50-turn visual stress session was not run; client and server history are explicitly bounded.

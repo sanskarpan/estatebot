@@ -108,20 +108,20 @@ All scraper output MUST conform to this schema before being persisted. This is t
 }
 ```
 
-## 4. `Chunk` (vector store record — conceptual, store as vector-DB metadata, not necessarily a SQL table)
+## 4. `Chunk` (implemented SQLite FTS5 search record)
 
 | Field | Type | Notes |
 |---|---|---|
-| `chunk_id` | string (UUID) | primary key in vector store |
+| `chunk_id` | string (stable hash) | primary key in `chunks` and `chunks_fts` |
 | `parent_type` | enum `listing` \| `content_document` | |
 | `parent_id` | string | FK to `Listing.id` or `ContentDocument.id` |
 | `parent_source_id` | string | denormalized for fast citation display without a join |
 | `parent_source_url` | string | denormalized, used directly for citation links |
 | `chunk_type` | enum `overview` \| `amenities` \| `location` \| `pricing` \| `body` | lets retrieval favor certain chunk types for certain intents |
-| `text` | string | the actual chunked text that was embedded |
-| `embedding` | float[] | vector-store-native |
+| `text` | string | normalized searchable text indexed by FTS5 |
+| `is_active` | boolean | inactive chunks are excluded from retrieval |
 
-**Chunking rule:** for a `Listing`, generate at minimum: (1) an `overview` chunk = name + type + location + status + a 1–2 sentence natural-language synthesis of the structured fields (so numeric facts are also present as retrievable prose, not only as separate SQL columns); (2) an `amenities` chunk if amenities exist; (3) a `body` chunk from `description` if longer than ~40 words (short descriptions can be folded into the overview chunk instead of split needlessly). For a `ContentDocument`, chunk `body_text` at ~300–500 tokens per chunk with ~50-token overlap.
+**Chunking rule:** for a `Listing`, generate: (1) an `overview` chunk containing identity, type, location, status, price, bedrooms, area, and other structured facts; (2) an `amenities` chunk when amenities exist; and (3) bounded `body` chunks when the description exceeds 40 words. Short descriptions are folded into the overview. `ContentDocument.body_text` is split into overlapping chunks of roughly 420 whitespace-delimited words with a 60-word overlap. `ingestion/build_index.py` rebuilds both the canonical chunk table and its FTS5 index.
 
 ## 5. SQL DDL (SQLite-compatible; Postgres-compatible with trivial type substitutions noted)
 
@@ -237,4 +237,4 @@ CREATE TABLE messages (
 
 ## 7. Why structured columns AND free-text chunks (not one or the other)
 
-Structured columns (`price_amount`, `bedrooms_min`, `location_city`, etc.) exist so the retrieval layer can run deterministic, correct filters ("under 2,000,000 SAR", "3+ bedrooms", "in Riyadh") — something embedding similarity search is fundamentally unreliable at. Free-text chunks exist so descriptive/fuzzy questions ("something with a nice view", "family-friendly community", "luxury with a car-brand collaboration") still retrieve well via semantic search. The system is only complete with both — see `docs/05-CHATBOT-RAG-SPEC.md` §Retrieval strategy for how they're combined at query time.
+Structured columns (`price_amount`, `bedrooms_min`, `location_city`, etc.) support deterministic filters such as "under 2,000,000 SAR", "3+ bedrooms", and "in Riyadh". Free-text chunks support BM25 matching for names, descriptions, amenities, and supporting documents. The planner combines them as described in `docs/05-CHATBOT-RAG-SPEC.md` §3.

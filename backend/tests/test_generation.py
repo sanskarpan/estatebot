@@ -14,6 +14,28 @@ def test_citations_are_limited_to_retrieved_context():
     assert valid is False
 
 
+def test_citation_cleanup_removes_empty_parentheses():
+    context = [RetrievedChunk("c1", "darglobal", "dg1", "https://darglobal.co.uk/dg1", "DG1", "overview", "facts", -1)]
+    answer, citations, valid = verify_and_extract("DG1 is in Dubai ([[id:dg1]]).", context)
+    assert answer == "DG1 is in Dubai."
+    assert "()" not in answer
+    assert [item.source_id for item in citations] == ["dg1"]
+    assert valid is True
+
+
+def test_marker_only_and_cross_source_ambiguous_citations_are_invalid():
+    single = [RetrievedChunk("c1", "darglobal", "same", "https://darglobal.co.uk/same", "Same", "overview", "facts", -1)]
+    answer, citations, valid = verify_and_extract("([[id:same]])", single)
+    assert answer == ""
+    assert citations[0].source_site == "darglobal"
+    assert valid is False
+
+    ambiguous = single + [RetrievedChunk("c2", "wasalt", "same", "https://wasalt.sa/same", "Same", "overview", "facts", -2)]
+    _, citations, valid = verify_and_extract("A claim [[id:same]]", ambiguous)
+    assert citations == []
+    assert valid is False
+
+
 @pytest.mark.asyncio
 async def test_openrouter_falls_back_after_primary_failure(monkeypatch):
     calls = []

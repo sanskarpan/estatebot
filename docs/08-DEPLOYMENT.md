@@ -1,172 +1,135 @@
-# 08 — Docker, Deployment & Operations
+# 08 — Docker, Delivery, and Operations
 
-## Implemented build decision
+This document records the implemented delivery design. Reviewer-facing URLs and provider-specific release facts are in [`../SUBMISSION.md`](../SUBMISSION.md); implementation and public checks are in [`IMPLEMENTATION-STATUS.md`](IMPLEMENTATION-STATUS.md) and [`DEPLOYED-QA.md`](DEPLOYED-QA.md).
 
-The current implementation uses a single Python 3.12 FastAPI runtime image that serves the vanilla static frontend. It also contains the scraper and ingestion packages so the same build can run the Compose tool profiles. SQLite plus the FTS5/BM25 index lives under `/app/data`; a checked-in normalized two-source seed snapshot at `/app/seed_corpus.json` bootstraps a fresh API volume. The public release runs as a Render free web service from the root `render.yaml` configuration. Exact local and public evidence is in [`IMPLEMENTATION-STATUS.md`](IMPLEMENTATION-STATUS.md) and [`DEPLOYED-QA.md`](DEPLOYED-QA.md).
+## 1. Runtime image
 
-## 1. Containerisation requirements
+`backend/Dockerfile` builds a single Python 3.12 image containing:
 
-- A `Dockerfile` per service that needs one: `backend/Dockerfile` (FastAPI app; also serves the built static frontend if the single-container approach is chosen — recommended, see §1.3), optionally `frontend/Dockerfile` if served as its own container/static host instead.
-- Multi-stage builds: a `builder` stage installs build-only dependencies (compilers, dev packages, `npm install && npm run build` for the frontend if bundled in) and a slim `runtime` stage (e.g. `python:3.12-slim`) copies only what's needed to run — keeps the final image small and reduces attack surface.
-- `docker-compose.yml` at the repo root orchestrates: the `api` service, and a one-off `scraper` / `ingestion` profile/service that can be run on demand (`docker compose run --rm scraper`, `docker compose run --rm ingestion`) without being part of the always-on stack.
-- A named Docker volume (or bind mount for local dev) persists `data/` (SQLite file + vector store directory) across container restarts — losing the scraped corpus on every redeploy would defeat the point of scraping at all.
-- `.dockerignore` excludes `data/raw/`, local venvs, node_modules, `.git`, `.env` (never bake secrets into an image layer).
+- the FastAPI application;
+- the vanilla static frontend;
+- the collection and ingestion packages used by one-off tool commands;
+- the normalized seed corpus used to initialize an empty data directory.
 
-### 1.1 `Dockerfile` — backend (illustrative shape; adapt exact base image/versions during implementation)
+The container exposes port 8000 and includes an HTTP health check against `/api/health`. Development dependencies, the local virtual environment, `.env`, Git metadata, and raw capture files are excluded from the production image.
 
-```dockerfile
-# ---- builder stage ----
-FROM python:3.12-slim AS builder
-WORKDIR /app
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+Recorded release measurements:
 
-# (optional) frontend build stage, if bundling the SPA into this same image
-FROM node:20-slim AS frontend-builder
-WORKDIR /frontend
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
-COPY frontend/ .
-RUN npm run build
+| Check | Result |
+|---|---|
+| Final image size | approximately 191 MiB |
+| Idle memory | approximately 52 MiB |
+| Fresh-volume startup | 248 records and 20 documents restored |
+| Health state | Docker `healthy`, API HTTP 200 |
 
-# ---- runtime stage ----
-FROM python:3.12-slim AS runtime
-WORKDIR /app
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
-COPY backend/ /app/backend
-COPY --from=frontend-builder /frontend/dist /app/backend/static
-ENV PYTHONUNBUFFERED=1
-EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" || exit 1
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
+## 2. Local orchestration
 
-### 1.2 `docker-compose.yml` — illustrative shape
+`docker-compose.yml` defines three roles over the same application code and named data volume:
 
-```yaml
-services:
-  api:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    ports:
-      - "8000:8000"
-    env_file: .env
-    volumes:
-      - estatebot_data:/app/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  scraper:
-    build:
-      context: .
-      dockerfile: scraper/Dockerfile
-    env_file: .env
-    volumes:
-      - estatebot_data:/app/data
-    profiles: ["tools"]     # not started by default `docker compose up`
-    command: ["python", "-m", "scraper.run_all"]
-
-  ingestion:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile   # can reuse backend image if deps overlap sufficiently
-    env_file: .env
-    volumes:
-      - estatebot_data:/app/data
-    profiles: ["tools"]
-    command: ["python", "-m", "ingestion.build_index"]
-
-volumes:
-  estatebot_data:
-```
-
-Local full pipeline after the initial seeded boot: `docker compose run --rm scraper`, then `docker compose run --rm ingestion`, then restart `api`. For a clean local API demo, `docker compose up --build api` is sufficient because the seed snapshot is loaded automatically.
-
-### 1.3 Single-container vs multi-container decision
-
-**Recommended for this assignment: single deployed container (`api`) that also serves the built static frontend**, because most zero-cost hosting targets (see §2) bill/provision per *service*, and running two long-lived services (a separate frontend host + a separate backend host) adds cross-origin/CORS complexity and doubles the chance of one half sleeping while the other is awake. The scraper/ingestion remain separate *tool* profiles run on demand (locally, in CI, or as a one-off job on the host if supported), not long-running services — this matches their actual usage pattern (run occasionally to refresh data, not continuously).
-
-## 2. Hosting target comparison (evaluate at build time — this list reflects research as of September 2026; free-tier terms change frequently, re-verify before committing)
-
-| Platform | Free tier reality (as researched) | Fit for this project |
+| Service | Lifecycle | Purpose |
 |---|---|---|
-| **Render** | Maintains a genuine no-card-required free "Hobby" web-service tier (Docker-deployable), ~512MB RAM, that stays deployed indefinitely but **sleeps after a period of inactivity** and cold-starts on the next request (typically tens of seconds). | **Primary recommendation.** No credit card, straightforward Docker deploy from a GitHub repo, persistent free hosting (not a time-limited trial). The sleep behaviour must be surfaced honestly in the UI (§3 of `docs/07-FRONTEND-SPEC.md` "cold-start" state) rather than hidden. |
-| **Hugging Face Spaces (Docker SDK)** | Free CPU-tier Spaces support arbitrary Dockerfiles, are commonly used for exactly this kind of AI-demo deployment, and give a stable public URL; free-tier Spaces can also idle/sleep after inactivity depending on visibility/tier. | **Strong alternative/backup**, especially well-suited to an "AI demo" framing and a natural fit for a portfolio-style submission; verify current Space resource limits (RAM/CPU/storage) accommodate the embedding model + vector store at build time. |
-| **Google Cloud Run** | Has a genuinely permanent (not time-limited-trial) free monthly allowance of requests/compute for a container-based service; requires a Google Cloud account (card on file for the broader account, but the free allowance itself doesn't require spend for light usage) and scales to zero between requests (cold starts similar in spirit to Render's sleep). | Good backup if Render/HF don't fit resource needs; more setup steps (project/IAM/artifact registry) than Render or HF Spaces, which matters for a time-boxed assignment. |
-| **Railway** | As of 2026, no longer offers a persistent free tier — usage-based billing after a short trial/credit. | Not recommended as the primary target given the "must run within free tiers" constraint in `docs/01-SPEC.md` §6, unless the builder has existing credits; acceptable only as a documented exception with cost noted. |
-| **Fly.io** | As of 2026, no longer offers an always-on free tier — trial-only, then pay-per-second. | Same caveat as Railway; keep as a documented "if paying a few dollars is acceptable" fallback, not the default plan. |
+| `api` | Long-running | UI, API, SQLite, FTS5 retrieval |
+| `scraper` | One-off tool | Bounded source refresh |
+| `ingestion` | One-off tool | Rebuild chunks/index and seed export |
 
-**Recorded decision:** Render was selected for its no-cost Docker service and straightforward repository integration. BM25/SQLite FTS5 was selected after resource measurement to preserve comfortable headroom on a 512 MB instance. The actual URL, cost, and cold-start limitation are recorded in `SUBMISSION.md`.
+Start the application:
 
-### 2.1 Prepared Render deployment
+```bash
+cp .env.example .env
+docker compose up --build api
+```
 
-`render.yaml` is the concrete deployment manifest. It uses the Docker runtime, free 512 MB plan, `/api/health`, CI-gated automatic deploys, BM25 retrieval, the configured free-model chain, and dashboard-provided secrets. Render's free service filesystem is ephemeral, so the application intentionally reconstructs SQLite and its FTS5 index from the checked-in seed on each clean instance start; chat history is consequently demo-session data rather than durable product data. This avoids claiming persistent free disk support that the platform does not provide.
+Refresh after the API has initialized the last-known-good seed:
 
-The active service is configured with `OPENROUTER_API_KEY` in the host secret store and its assigned HTTPS URL in `OPENROUTER_HTTP_REFERER` and `CORS_ALLOWED_ORIGINS`. Reproductions should create a web service from the manifest and supply those secret/environment values without writing them to the repository.
+```bash
+docker compose run --rm scraper
+docker compose run --rm ingestion
+docker compose restart api
+```
 
-### 2.2 Best-effort availability ping
+That ordering is intentional. An incomplete or challenged source run cannot mass-deactivate the existing good snapshot.
 
-`.github/workflows/availability-ping.yml` requests the public `/api/health` endpoint every 10 minutes and can also be run manually. The schedule starts at minute 7 rather than the top of the hour to reduce the chance of peak scheduler delay. The request uses a 90-second timeout, retries transient failures twice, validates the JSON health status, and leaves a visible failed workflow run when readiness cannot be confirmed.
+## 3. Persistence and startup
 
-This reduces the likelihood of an idle cold start during the assessment window but is not an uptime guarantee. Scheduled GitHub Actions may run late or be dropped under load, public-repository schedules are disabled after 60 days without repository activity, the host can still restart or suspend a free instance, and continuously keeping one instance active consumes the workspace's monthly free-instance hours. A paid always-on instance is the reliable production solution.
+Runtime state lives under `/app/data`:
 
-## 3. Resource sizing
+- `estatebot.db` contains canonical records, FTS5 chunks, conversations, messages, and scrape metadata;
+- raw captures are development/audit inputs and are not required for request-time retrieval;
+- a fresh empty directory is reconstructed from `/app/seed_corpus.json`, then indexed locally.
 
-- Target runtime RAM budget: fit comfortably within **512MB** (the common denominator across free tiers above) — this directly drives the embedding-model-vs-BM25 decision in `docs/05-CHATBOT-RAG-SPEC.md` §9: measure the actual resident memory of the chosen `sentence-transformers` model + FastAPI + Chroma at the target corpus size before committing; if it doesn't comfortably fit with headroom, switch to the BM25/SQLite-FTS5 fallback, which has a negligible memory footprint.
-- Target image size: keep the final runtime image lean (aim well under 1GB) by using slim base images, multi-stage builds, and excluding dev/test dependencies from the runtime `requirements.txt` (split into `requirements.txt` and `requirements-dev.txt`).
-- Disk: SQLite DB + vector store + (dev-only) raw HTML snapshots should stay in the low tens of MB to low hundreds of MB at the corpus sizes in `docs/01-SPEC.md` §7 — well within any free tier's disk allowance; raw snapshots may be excluded from the production image/volume entirely if disk becomes a concern (they're a dev/audit aid, not required at runtime).
+The public assessment service uses ephemeral runtime storage by design. Property data is reproducible because the normalized seed is part of the image; conversation history is session data and may disappear after a service restart. Local Compose uses a named volume so iterative development survives container restarts.
 
-## 4. Environment variables
+## 4. Required configuration
 
-See `.env.example` for the authoritative, complete list with inline documentation. Summary of the most important ones:
+`.env.example` is the authoritative configuration template.
 
 | Variable | Required | Purpose |
-|---|---|---|
-| `OPENROUTER_API_KEY` | Yes | Auth for OpenRouter calls. Never committed; set via host secret manager. |
-| `OPENROUTER_MODEL_PRIMARY` | Yes | Primary free model ID, verified live per `docs/05-CHATBOT-RAG-SPEC.md` §1. |
-| `OPENROUTER_MODEL_FALLBACK_1` / `_2` | Recommended | Fallback chain models. |
-| `DATABASE_PATH` | Yes | Path to the SQLite file inside the mounted volume, e.g. `/app/data/estatebot.db`. |
-| `VECTOR_STORE_PATH` | Yes | Path to the Chroma persistence directory inside the mounted volume. |
-| `RETRIEVAL_MODE` | No (default `bm25_only`) | `hybrid` \| `vector_only` \| `bm25_only` — the current build uses the low-memory FTS5/BM25 path. |
-| `MAX_WASALT_LISTINGS` | No (default 400) | Scrape scope cap, per `docs/01-SPEC.md` §7. |
-| `MAX_DARGLOBAL_PRESS` | No (default 25) | Scrape scope cap. |
-| `CHAT_RATE_LIMIT_REQUESTS` / `CHAT_RATE_LIMIT_WINDOW_SECONDS` | No | Per `docs/06-API-SPEC.md` §6. |
-| `CHAT_HISTORY_TURNS` | No (default 8) | Per `docs/05-CHATBOT-RAG-SPEC.md` §2.3. |
-| `CORS_ALLOWED_ORIGINS` | Yes if split-origin deploy | Explicit allow-list, never `*` in production. |
-| `LOG_LEVEL` | No (default `INFO`) | Standard logging verbosity. |
+|---|---:|---|
+| `OPENROUTER_API_KEY` | For generated answers | Server-side provider credential; never expose to the browser or repository |
+| `OPENROUTER_MODEL_PRIMARY` | Yes | Automatic model choice |
+| `OPENROUTER_MODEL_FALLBACK_1`, `_2` | Recommended | Bounded resilience chain |
+| `OPENROUTER_SELECTABLE_MODELS` | Yes | Curated allow-list returned to the UI |
+| `DATABASE_PATH` | Yes | SQLite database path |
+| `SEED_CORPUS_PATH`, `SEED_ON_EMPTY` | Yes | Clean-start bootstrap |
+| `RETRIEVAL_MODE` | No | Current release uses `bm25_only` |
+| `MAX_RETRIEVAL_CHUNKS` | No | Context result cap, default 8 |
+| `CHAT_HISTORY_TURNS` | No | Server history bound, default 8 |
+| `CHAT_RATE_LIMIT_*` | No | Request budget and time window |
+| `LLM_*_TIMEOUT_SECONDS` | No | Per-attempt and total model bounds |
+| `CORS_ALLOWED_ORIGINS` | Yes | Explicit allowed browser origins |
+| scraper limits/delays | No | Ethical crawl bounds and retry behavior |
 
-## 5. Deployment procedure (Render-style; adapt mechanically for the actually-chosen platform)
+The application remains useful without an OpenRouter key: relevant records are formatted deterministically with canonical citations. Secrets belong in the runtime secret manager, never image layers, manifests, screenshots, or documentation.
 
-1. Push the repository to GitHub (public or with the reviewer granted access).
-2. In the hosting platform, create a new Web Service from the repo, select "Docker" as the environment, point at `backend/Dockerfile` (or the compose-equivalent config the platform supports).
-3. Set all required environment variables (§4) in the platform's dashboard/secret manager — never in the Dockerfile or repo.
-4. Attach a persistent disk/volume for `/app/data` if the platform supports it, so the corpus survives redeploys; if the platform's free tier has no persistent disk option, document that data is rebuilt on each deploy via a `release`/`predeploy` command that runs the scraper+ingestion pipeline before the app boots (acceptable trade-off — record which path was actually used).
-5. Deploy; confirm `GET /api/health` returns `200` with a non-zero `listings_total`.
-6. Confirm the chat UI loads at the public URL and a sample question from `docs/01-SPEC.md` §4 returns a correct, cited answer.
-7. Record the final URL, platform, and any operational caveats (cold start time, data-refresh method) in `SUBMISSION.md`.
+## 5. Release configuration
 
-## 6. Data refresh procedure (documented, not automated, unless time allows)
+The checked-in `render.yaml` is the concrete public-service manifest. It selects the Docker runtime, `/api/health`, FTS5/BM25 retrieval, automatic seed initialization, and environment-backed secrets. CI must pass before a release is accepted.
 
-Minimum viable: manual re-run — `docker compose run --rm scraper && docker compose run --rm ingestion`, then redeploy/restart the `api` service to pick up the refreshed volume contents (or trigger a hot-reload of the retrieval layer's in-memory handles if the app supports it without a restart — document whichever is actually implemented).
-Stretch goal (not required): a scheduled job (platform cron feature, or a GitHub Actions workflow that runs the scraper/ingestion and pushes a refreshed data snapshot / triggers a redeploy) — call out explicitly in `SUBMISSION.md` whether this was implemented or left manual.
+Release verification requires:
 
-## 7. Cost ledger (fill in with actuals during build; template below)
+1. root UI, `/api/health`, `/api/stats`, and `/docs` return successfully over HTTPS;
+2. health reports the exact non-zero corpus counts;
+3. a conversational prompt, no-match prompt, source-specific prompt, generic balanced prompt, and selected-model prompt behave correctly;
+4. citations resolve to canonical DarGlobal/Wasalt pages;
+5. validation, rate limiting, security headers, mobile layout, and transcript reset are checked;
+6. the actual URL, costs, and observational limits are recorded in [`../SUBMISSION.md`](../SUBMISSION.md).
 
-| Component | Provider | Expected cost |
-|---|---|---|
-| Hosting (API + frontend) | e.g. Render Hobby | $0 |
-| LLM generation | OpenRouter free model(s) | $0 |
-| Embeddings | Local `sentence-transformers` in-container | $0 |
-| Vector store | Embedded Chroma, same host, no external service | $0 |
-| Structured DB | SQLite, same host | $0 |
-| Domain | Platform-provided subdomain (e.g. `estatebot.onrender.com`) | $0 |
-| **Total** | | **$0** |
+## 6. Availability and cold starts
 
-If any component ends up non-zero-cost (e.g. a paid hosting tier was necessary), state the actual monthly cost and the reason plainly in `SUBMISSION.md` rather than glossing over it — honesty about trade-offs is itself part of what's being evaluated.
+`.github/workflows/availability-ping.yml` requests the public `/api/health` endpoint on a ten-minute off-hour schedule and supports manual execution. It uses a bounded timeout, retries transient failures, and fails visibly if readiness cannot be confirmed.
+
+This is best-effort assessment availability, not an uptime guarantee. Scheduled jobs can be delayed, the hosting service can restart independently, and the application still needs a visible bounded waking/retry state. The first manual workflow run passed; a complete provider idle-window wake remains an explicitly recorded observational gap.
+
+## 7. CI gates
+
+`.github/workflows/ci.yml` verifies:
+
+- the Python test suite;
+- exact seed counts and both source namespaces;
+- Compose configuration;
+- a clean Docker image build;
+- fresh-container health;
+- cited chat behavior and cross-source generic retrieval.
+
+Live OpenRouter calls are not placed in ordinary CI because free capacity is variable and a secret-backed network dependency would make correctness tests flaky. Provider routing is mocked in CI and separately checked during release QA.
+
+## 8. Cost ledger
+
+| Component | Implementation | Cost |
+|---|---|---:|
+| Web service | Free assessment service | $0 |
+| LLM generation | Curated OpenRouter free models | $0 |
+| Retrieval | SQLite FTS5/BM25 | $0 |
+| Embeddings/vector service | Not used | $0 |
+| Database | SQLite in the application runtime | $0 |
+| **Total monthly** | | **$0** |
+
+Free service and model availability can change. Recheck platform terms and OpenRouter model pricing before a future release rather than treating this dated assessment ledger as permanent.
+
+## 9. Operational limitations
+
+- Runtime conversation storage is not durable across public-service restarts.
+- Data refresh is manual; the public service starts from the dated checked-in snapshot until a new seed is released.
+- The scheduled health check reduces cold-start likelihood but does not provide production uptime.
+- In-memory rate limiting is appropriate for one process; multi-instance delivery would require a shared limiter.
+- SQLite is appropriate for this read-heavy corpus. A multi-instance, write-heavy product should move persistence to a managed relational database.

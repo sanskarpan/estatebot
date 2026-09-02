@@ -44,9 +44,9 @@ This is the **execution plan**. Work top to bottom; each phase gates the next (d
 
 ## Phase 4 — Ingestion (chunking + embedding)
 
-- [x] Decide embeddings vs BM25 based on a real memory-footprint measurement against the target host's budget (`docs/08-DEPLOYMENT.md` §3); document the decision.
+- [x] Decide embeddings vs BM25 based on a real memory-footprint measurement; record the selected FTS5/BM25 path in `docs/02-ARCHITECTURE.md` and `docs/08-DEPLOYMENT.md`.
 - [x] Implement chunking rules from `docs/04-DATA-SCHEMA.md` §4.
-- [x] Implement `ingestion/build_index.py`: reads all active `Listing`/`ContentDocument` rows, produces chunks, computes embeddings (or BM25 index), persists to the vector store (or index file).
+- [x] Implement `ingestion/build_index.py`: reads all active `Listing`/`ContentDocument` rows, produces bounded chunks, and rebuilds the SQLite FTS5/BM25 index.
 - [x] Run ingestion end-to-end; confirm chunk count is sane (roughly proportional to corpus size) and a manual similarity query against a known term returns the expected chunk.
 - [x] Confirm re-running ingestion after a re-scrape correctly updates the index (no stale duplicate vectors for updated records; soft-deleted records excluded from retrieval).
 
@@ -61,7 +61,7 @@ This is the **execution plan**. Work top to bottom; each phase gates the next (d
 
 ## Phase 6 — Generation & OpenRouter integration
 
-- [x] Implement the OpenRouter client with the exact request shape in `docs/05-CHATBOT-RAG-SPEC.md` §1.2.
+- [x] Implement selected-model-first OpenRouter routing and bounded fallback per `docs/05-CHATBOT-RAG-SPEC.md` §5.
 - [x] Implement the system prompt per §2.1, prompt assembly per §2.2, and context-budget trimming per §2.3 using a conservative bound validated against the live configured-model metadata.
 - [x] Implement the fallback chain with per-attempt and total timeouts per §1.1 and §6.
 - [x] Implement streaming response support (SSE) with the `event: token` / `event: done` / `event: error` shape from `docs/06-API-SPEC.md` §1.
@@ -90,11 +90,11 @@ This is the **execution plan**. Work top to bottom; each phase gates the next (d
 - [x] Implement responsive layout + accessibility requirements (§5).
 - [x] Implement client-side timeout, retry, and `sessionStorage` conversation persistence (§6).
 - [x] Implement sanitized markdown rendering and secure external links (§7).
-- [x] Browser-assisted accessibility pass: true 375×812 viewport, no horizontal overflow, ≥44px primary controls, semantic landmark/control tree, Enter/Shift+Enter behavior, About disclosure, focus styling, and citation-link attributes verified.
+- [x] Browser-assisted accessibility pass: true 375×812 viewport, no horizontal overflow, native reachable controls, semantic landmark/control tree, Enter/Shift+Enter behavior, About dialog disclosure, visible focus styling, and citation-link attributes verified.
 
 ## Phase 9 — Containerisation
 
-- [x] Write `backend/Dockerfile` (multi-stage, includes frontend build) per `docs/08-DEPLOYMENT.md` §1.1.
+- [x] Write `backend/Dockerfile` (multi-stage, includes the static frontend) per `docs/08-DEPLOYMENT.md` §1.
 - [x] Write `scraper/Dockerfile` (or reuse backend image with a different entrypoint/command).
 - [x] Write `docker-compose.yml` with `api`, `scraper`, `ingestion` services per §1.2.
 - [x] Write `.dockerignore`.
@@ -111,12 +111,13 @@ This is the **execution plan**. Work top to bottom; each phase gates the next (d
 
 ## Phase 11 — Deployment
 
-- [x] Choose and record the hosting platform per `docs/08-DEPLOYMENT.md` §2 decision.
+- [x] Choose and record the hosting platform and concrete manifest per `docs/08-DEPLOYMENT.md` §5.
 - [x] Provision the service, set all env vars from `.env.example`/§4, and document the deliberate seed-rebuild fallback for ephemeral storage.
 - [x] Deploy; confirm `/api/health` is `200` with real corpus stats.
 - [x] Confirm the public URL loads the chat UI and live end-to-end chat exchanges work with real OpenRouter calls.
 - [x] Confirm HTTPS is active — no HTTP-only public URL is shipped.
-- [x] Record cold-start behavior honestly: the warming UI/retry path is verified, while a complete host idle-window wake was not observed during the release window.
+- [x] Add and manually verify the scheduled health-check workflow as best-effort cold-start mitigation.
+- [x] Record cold-start behavior honestly: the scheduled check and warming/retry path are verified, while a complete host idle-window wake was not observed during the release window.
 
 ## Phase 12 — Final QA & submission
 
