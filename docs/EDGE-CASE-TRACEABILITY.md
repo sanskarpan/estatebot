@@ -96,4 +96,4 @@ This matrix maps every requirement in [`10-EDGE-CASES.md`](10-EDGE-CASES.md) to 
 
 ## Remaining observational limits
 
-No row is silently treated as proven by a unit test when it needs a particular physical or timed condition. A scheduled ten-minute health check is active and manually verified as best-effort cold-start mitigation. The remaining evidence gaps are a complete host idle-window cold start, a native assistive-technology session, and a deliberately dropped live network stream. Their implemented recovery/bounding paths are automated or inspected, and the gaps are disclosed in `SUBMISSION.md`.
+No row is silently treated as proven by a unit test when it needs a particular physical or timed condition. A fifteen-minute health check is configured and its public health request is manually verified, but a schedule-triggered run was not observed. The remaining evidence gaps are scheduled-trigger reliability, a complete host idle-window cold start, a native assistive-technology session, and a deliberately dropped live network stream. Their implemented recovery/bounding paths are automated or inspected, and the gaps are disclosed in `SUBMISSION.md`.

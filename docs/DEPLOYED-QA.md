@@ -68,7 +68,7 @@ The 11-message live sample completed without timeouts or crashes. Grounded model
 
 ## Explicit limitations
 
-- The scheduled ten-minute health check is active and its first manual run passed. The free host's complete idle/sleep window was not waited out, so this remains best-effort mitigation rather than an uptime claim.
+- The fifteen-minute health check is configured and its public health request passed by manual dispatch. No schedule-triggered run appeared during the observed release slots, and the free host's complete idle/sleep window was not waited out, so this remains best-effort mitigation rather than an uptime claim.
 - No native screen-reader session was run; semantic browser structure and native control focusability were inspected.
 - A live TCP connection was not deliberately severed mid-stream; automated tests verify that an unverified/incomplete stream is never presented as a grounded answer.
 - A 51-turn visual stress session was completed in the later adversarial hardening pass; the DOM and restored transcript remained capped at 100 messages.
@@ -99,7 +99,7 @@ The 11-message live sample completed without timeouts or crashes. Grounded model
 - Unspecified-source structured retrieval now alternates available candidates from DarGlobal and Wasalt. Explicit source filters, named entities, and global cheapest/most-expensive ordering are unchanged.
 - On the public UI, “What villas are available?” returned eight verified citations split evenly: four DarGlobal Oman projects and four Wasalt Saudi projects. The answer visibly grouped both providers.
 - The clean-container CI smoke check now requires a generic villa answer to contain both source identifiers. Automated coverage increased to 64 passing tests.
-- `.github/workflows/availability-ping.yml` is active on a ten-minute, off-hour-offset schedule and supports manual dispatch. Its first manual run passed against `/api/health`. This is documented as best-effort cold-start mitigation, not an uptime guarantee.
+- `.github/workflows/availability-ping.yml` supports scheduled and manual dispatch. Its first manual run passed against `/api/health`. A later operational audit corrected the cadence and strengthened response validation; this remains best-effort cold-start mitigation, not an uptime guarantee.
 
 ## Adversarial hardening and rich-card addendum — 2026-09-03
 
@@ -119,3 +119,14 @@ The 11-message live sample completed without timeouts or crashes. Grounded model
 - The model selector exposed all seven options and remained entirely inside the mobile viewport. The About dialog, header controls, composer, focus states, and capability metrics were also rechecked at desktop and the smallest supported mobile width.
 - Browser QA found and corrected two additional issues during this visual pass: generic `both/all sources` language was initially mistaken for an unknown provider, and the New chat toast overlapped the mobile composer. Both now have regression coverage or measured browser verification.
 - The final suite contains 75 passing tests. CI also passed Compose validation, a clean image build, seeded startup, and container smoke checks for commit `4b2eb0b`.
+
+## Availability and release-parity audit — 2026-09-03
+
+- The prior cron expression intended a ten-minute cadence, but GitHub showed only a manual run and no scheduled history. It was replaced with explicit fifteen-minute off-hour marks (`5,20,35,50`) and the workflow was re-enabled to refresh scheduler registration.
+- The health step now follows redirects, retries transient failures, parses the response, and fails unless `status` is `ok` and `corpus.listings_total` is positive.
+- Manual run `33682389121` completed successfully at commit `6043598`, reporting `EstateBot ready: 248 records; uptime=118s`. The associated CI run `33682379353` also passed.
+- No `schedule` event appeared during the observed 21:05, 21:20, or post-registration 21:35 UTC slots, including a five-minute allowance after the last slot. This audit therefore verifies the probe and configuration, not reliable scheduler execution or continuous uptime.
+- A direct public health request at 21:41 UTC returned `status=ok`, 248 records, and process uptime of four seconds. The service recovered correctly, but the short uptime corroborates that it had recently restarted or woken; it does not support a keep-awake claim.
+- Public `/api/health`, `/api/models`, and `/api/corpus/stats` responses matched the release expectations: 248 records, 36 DarGlobal records, 212 Wasalt records, 20 documents, 13 cities, 7 countries, six selectable free models, fallback enabled, and BM25-only retrieval.
+- The public HTML, JavaScript, and CSS were byte-for-byte identical to the checked-in assets by SHA-256. Fresh-browser checks also passed greeting behavior, single-line message rendering, source-label suppression for uncited responses, New chat isolation, the seven-option selector, and mobile overflow.
+- Direct public API regression passed greeting, coverage, unknown-source, both-source, unsupported-developer, prompt-extraction, out-of-corpus, invalid-model, and multi-turn location-isolation cases.

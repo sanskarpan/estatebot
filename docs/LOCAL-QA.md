@@ -52,5 +52,5 @@
 ## Public-only follow-up
 
 - Live OpenRouter quality, fallback latency, HTTPS, and public-browser behavior are now covered in [`DEPLOYED-QA.md`](DEPLOYED-QA.md).
-- The scheduled health check was manually verified as best-effort cold-start mitigation. A complete idle-window wake, deliberately interrupted live networking, and a native assistive-technology session remain observational limitations.
+- The configured health check's public probe was manually verified as best-effort cold-start mitigation; schedule-trigger execution was not observed. A complete idle-window wake, deliberately interrupted live networking, and a native assistive-technology session remain observational limitations.
 - The earlier in-app browser localhost restriction no longer applied during the 2026-09-03 pass; the current local build was exercised directly at desktop and 375×812. Native controls and the semantic accessibility tree were inspected; full sequential Tab traversal could not be reliably synthesized by the browser harness, so a real screen-reader/keyboard session remains an observational limitation.
