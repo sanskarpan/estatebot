@@ -65,12 +65,12 @@ This matrix maps every requirement in [`10-EDGE-CASES.md`](10-EDGE-CASES.md) to 
 | 4.5 | Automated | Citation verifier and `test_prompt_extraction_probe_does_not_leak_system_prompt`; context is delimited as data. |
 | 4.6 | Automated | Off-topic coding input fails softly without external-knowledge generation in deterministic mode. |
 | 4.7 | Inspected; live-model QA pending | System prompt forbids opinions/defamation and permits only sourced factual statements. |
-| 4.8 | Automated | Threshold+1 rate-limit test verifies `429` and `Retry-After`; UI surfaces the wait. |
+| 4.8 | Automated + browser | Threshold+1 test verifies `429` and `Retry-After`; a three-second live browser run verifies countdown text, disabled composer/retry controls, and automatic reset. |
 | 4.9 | Automated | Missing-provider deterministic mode and mocked primary-to-fallback behavior. |
-| 4.10 | Inspected; deployed QA pending | Client catches stream termination/no-final events, renders an interrupted/error state, and offers Retry. |
+| 4.10 | Static contract; deployed network-drop QA pending | Client rejects a stream without the verified `done` event, renders an ungrounded interrupted/error state, and offers Retry. |
 | 4.11 | Inspected | No mutable answer cache; structured retrieval and citations remain fact-consistent across repeats. |
 | 4.12 | Automated/static | Root-serving test plus visible `<noscript>` fallback. |
-| 4.13 | Inspected; deployed QA pending | Server history is bounded; client transcript is persisted, but 50-turn visual performance remains manual. |
+| 4.13 | Automated/static; deployed visual QA pending | Server history is bounded; restored and live client transcripts are capped at 100 messages, while 50-turn visual performance remains manual. |
 | 4.14 | Automated by no-match policy | Unknown developer/property terms receive no corpus context and cannot trigger general-knowledge comparison in deterministic mode. |
 
 ## Infrastructure and deployment
@@ -96,4 +96,4 @@ This matrix maps every requirement in [`10-EDGE-CASES.md`](10-EDGE-CASES.md) to 
 
 ## Remaining manual gates
 
-No row is silently treated as proven by a unit test when it requires a real host or model. The remaining evidence is concentrated in authenticated OpenRouter behavior, Render cold starts, mobile viewport/composer behavior, keyboard/citation operation, dropped network streams, and long-session visual performance. These map directly to the 17-step deployed script in [`09-TESTING-QA.md`](09-TESTING-QA.md).
+No row is silently treated as proven by a unit test when it requires a real host or model. The remaining evidence is concentrated in authenticated OpenRouter behavior, Render cold starts, a real assistive-technology pass, deliberately dropped network streams, and long-session visual performance. These map directly to the 17-step deployed script in [`09-TESTING-QA.md`](09-TESTING-QA.md).

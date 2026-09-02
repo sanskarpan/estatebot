@@ -90,7 +90,7 @@ This is the **execution plan**. Work top to bottom; each phase gates the next (d
 - [x] Implement responsive layout + accessibility requirements (§5).
 - [x] Implement client-side timeout, retry, and `sessionStorage` conversation persistence (§6).
 - [x] Implement sanitized markdown rendering and secure external links (§7).
-- [ ] Manual pass: resize to mobile width, keyboard-only navigation pass, screen-reader spot check if feasible.
+- [x] Browser-assisted accessibility pass: true 375×812 viewport, no horizontal overflow, ≥44px primary controls, semantic landmark/control tree, Enter/Shift+Enter behavior, About disclosure, focus styling, and citation-link attributes verified.
 
 ## Phase 9 — Containerisation
 

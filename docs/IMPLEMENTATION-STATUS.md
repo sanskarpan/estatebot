@@ -19,7 +19,7 @@
 
 | Check | Result |
 |---|---|
-| `PYTHONPATH=. .venv/bin/python -m pytest -q` | 50 passed; one upstream Starlette/httpx deprecation warning |
+| `PYTHONPATH=. .venv/bin/python -m pytest -q` | 51 passed; one upstream Starlette/httpx deprecation warning |
 | `docker compose config --quiet` | Passed |
 | API image build | Passed (`estatebot-api:local`) |
 | Fresh-container `/api/health` | HTTP 200; 36 DarGlobal + 212 Wasalt records loaded from seed |
@@ -29,7 +29,7 @@
 | Cities | Al Ahsa, Benahavís, Dammam, Doha, Dubai, Jeddah, Khobar, London, Mecca, Medina, Muscat, Ras Al Khaimah, Riyadh |
 | Countries | Maldives, Oman, Qatar, Saudi Arabia, Spain, United Arab Emirates, United Kingdom |
 | Search index | 836 active chunks |
-| Runtime resource check | Healthy container at 52.16 MiB idle RAM; 200,576,043-byte (~191 MiB) image |
+| Runtime resource check | Healthy container at 52.07 MiB idle RAM; 200,628,433-byte (~191 MiB) image |
 | OpenRouter catalog check | All three configured IDs present with zero prompt/completion pricing; context windows 262,144 / 256,000 / 1,048,576 tokens |
 
 The first 150-row crawl contained three landing-page false positives; those rows were removed, the discovery filter was corrected for ordinary links and JSON-LD, and a small bounded follow-up crawl produced 180 genuine detail records. The index and seed were then regenerated.

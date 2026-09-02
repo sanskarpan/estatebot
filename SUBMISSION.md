@@ -61,7 +61,7 @@ Current limitations:
 - Wasalt scope is a bounded English sale/rent detail crawl for Dammam, Jeddah, and Riyadh, 32 records from the initial public Projects result set, and three city guides. Auctions are hosted on a separate surface and plans/unexposed result pages remain outside this bounded assessment snapshot.
 - The current local run has no OpenRouter key, so automated responses use deterministic cited facts. Live fallback-chain and model-quality QA still need a deployment secret.
 - No hosting account, public repository, or HTTPS URL has been provisioned from this workspace. A free-tier `render.yaml` Blueprint is ready; the seed rebuilds ephemeral SQLite state on restart.
-- All 17 manual deployed-URL QA items in `docs/09-TESTING-QA.md` remain to be executed after deployment; 50 automated tests pass locally, including validation of every checked-in seed record and the edge-case paths mapped in `docs/EDGE-CASE-TRACEABILITY.md`.
+- All 17 manual deployed-URL QA items in `docs/09-TESTING-QA.md` remain to be executed after deployment; 51 automated tests pass locally, including validation of every checked-in seed record and the edge-case paths mapped in `docs/EDGE-CASE-TRACEABILITY.md`. A separate local browser pass already verifies the 375×812 layout, keyboard submission/newline handling, About disclosure, secure citations, and rate-limit countdown/reset.
 
 ## 7. How to run locally (for the reviewer, if they want to verify the source too)
 
