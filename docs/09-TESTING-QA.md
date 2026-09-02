@@ -74,3 +74,5 @@ Execute every one of the following, record pass/fail and the actual response (sc
 - All unit/integration tests green in CI (or local `pytest` run if CI isn't set up — note which in `SUBMISSION.md`).
 - All 17 manual QA script items executed against the **live deployed URL** (not just localhost) with results recorded.
 - Any failed/skipped item is either fixed before submission or explicitly documented as a known limitation in `SUBMISSION.md` §Known limitations — never silently omitted.
+
+The requirement-by-requirement evidence map is maintained in [`EDGE-CASE-TRACEABILITY.md`](EDGE-CASE-TRACEABILITY.md). Update that matrix whenever a test or implementation path changes.

@@ -60,3 +60,61 @@ def test_latest_news_routes_to_press_documents_in_date_order(db):
     assert result.plan.content_intent is True
     assert [chunk.source_id for chunk in result.chunks[:2]] == ["press/newer", "press/older"]
     assert all(chunk.chunk_type == "press_release" for chunk in result.chunks)
+
+
+def test_company_question_routes_to_company_documents(db):
+    db.upsert_content(ContentDocument(
+        source_site="darglobal", source_id="about", source_url="https://darglobal.co.uk/about",
+        content_type="company_info", title="Discover DarGlobal", body_text="DarGlobal is a luxury real estate developer.",
+    ))
+    build_index(db)
+    result = RetrievalService(db).retrieve("Who is DarGlobal as a company?")
+    assert result.plan.content_type == "company_info"
+    assert result.chunks[0].source_id == "about"
+    assert result.chunks[0].chunk_type == "company_info"
+
+
+def test_directly_named_inactive_record_is_returned_with_stale_caveat(db):
+    db.upsert_listing(Listing(
+        source_site="darglobal", source_id="retired-tower", source_url="https://darglobal.co.uk/retired-tower",
+        record_type="project", name="Retired Tower", property_category="apartment", is_active=False,
+    ))
+    result = RetrievalService(db).retrieve("Tell me about Retired Tower")
+    assert result.plan.entity_is_active is False
+    assert result.chunks[0].source_id == "retired-tower"
+    assert "inactive at the last scrape" in result.chunks[0].text
+
+
+def test_extremely_broad_query_returns_bounded_corpus_overview(db):
+    result = RetrievalService(db).retrieve("Tell me about everything you have")
+    assert result.direct_answer
+    assert "3 listings/projects" in result.direct_answer
+    assert "narrow this" in result.direct_answer
+
+
+def test_overview_wording_does_not_discard_explicit_filters(db):
+    result = RetrievalService(db).retrieve("What do you have in Riyadh?")
+    assert result.direct_answer is None
+    assert result.structured
+    assert all(item["location_city"] == "Riyadh" for item in result.structured)
+
+
+def test_equal_cheapest_prices_are_both_returned(db):
+    db.upsert_listing(Listing(
+        source_site="wasalt", source_id="jeddah-tie", source_url="https://wasalt.sa/en/property/jeddah-tie",
+        record_type="sale_listing", name="Jeddah Tie Villa", property_category="villa", listing_type="sale",
+        location_city="Jeddah", price_amount=1250000, price_currency="SAR",
+    ))
+    result = structured_search(db, plan_query(db, "cheapest villa in Jeddah"), 5)
+    assert {item["source_id"] for item in result[:2]} == {"jeddah-1", "jeddah-tie"}
+
+
+def test_explicit_wasalt_projects_excludes_individual_listings(db):
+    db.upsert_listing(Listing(
+        source_site="wasalt", source_id="project-1", source_url="https://wasalt.sa/en/project/Riyadh/project-1",
+        record_type="project", name="Project One", location_country="Saudi Arabia", location_city="Riyadh",
+        listing_type="sale", property_category="villa",
+    ))
+    result = RetrievalService(db).retrieve("What projects does Wasalt have in Riyadh?")
+    assert result.plan.record_type == "project"
+    assert [item["source_id"] for item in result.structured] == ["project-1"]

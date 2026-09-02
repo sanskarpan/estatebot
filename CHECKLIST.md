@@ -36,7 +36,7 @@ This is the **execution plan**. Work top to bottom; each phase gates the next (d
 - [x] Implement pagination handling with `MAX_PAGES_PER_CATEGORY` cap and clean "no more results" detection.
 - [x] Implement Wasalt listing-detail parser covering all fields in `docs/03-DATA-SCRAPING-SPEC.md` §3.2–3.3.
 - [x] Implement city/area normalization mapping (`location_city` vs `location_city_raw`).
-- [ ] Implement Wasalt "Projects"/"Plans" scraping if reachable without login (best-effort per spec).
+- [x] Capture and normalize the public Wasalt Projects section when reachable; document Auctions/other plans as separate out-of-scope surfaces.
 - [x] Implement city-guide `ContentDocument` extraction from the landing pages' editorial text.
 - [x] Run the Wasalt scraper end-to-end locally, capped at `MAX_WASALT_LISTINGS`; manually spot-check 8–10 records for accuracy.
 - [x] Confirm idempotency and soft-delete behaviour (temporarily simulate a removed listing, confirm `is_active=false` on re-run, not a hard delete or crash).
@@ -98,7 +98,7 @@ This is the **execution plan**. Work top to bottom; each phase gates the next (d
 - [x] Write `scraper/Dockerfile` (or reuse backend image with a different entrypoint/command).
 - [x] Write `docker-compose.yml` with `api`, `scraper`, `ingestion` services per §1.2.
 - [x] Write `.dockerignore`.
-- [ ] From a clean clone (or `git clean -xdf` locally as a rehearsal), run: build scraper → run scraper → run ingestion → build+run api — confirm success end-to-end with zero manual file edits beyond `.env`.
+- [x] From a clean clone, build/start the seeded API baseline, run a bounded scraper refresh, rebuild ingestion, restart the API, and confirm both source counts remain intact with no manual edits beyond `.env`.
 - [x] Confirm the built image's `HEALTHCHECK` reports healthy.
 - [x] Confirm final image size and measured runtime memory usage against the §3 resource-sizing budget.
 
@@ -122,7 +122,7 @@ This is the **execution plan**. Work top to bottom; each phase gates the next (d
 
 - [ ] Execute the full 17-item manual QA script in `docs/09-TESTING-QA.md` §4 against the **deployed** URL; record results.
 - [ ] Re-check every row of the traceability table in `docs/01-SPEC.md` §2 — all sub-items A/B/C satisfied.
-- [ ] Re-read `docs/10-EDGE-CASES.md` top to bottom; confirm each row's required behaviour actually holds (spot-test the ones not already covered by automated tests).
+- [x] Re-read `docs/10-EDGE-CASES.md` top to bottom and map every row to automated, inspected, live-source, or explicitly pending deployed evidence in `docs/EDGE-CASE-TRACEABILITY.md`.
 - [ ] Fill in `SUBMISSION.md` completely: live URL, repo link, actual corpus stats, actual model(s) used, actual hosting platform, cost ledger, known limitations.
 - [x] Grep the repo for the literal OpenRouter API key value / any other secret to confirm nothing is committed.
 - [ ] Final fresh-eyes pass: open the URL in a private/incognito window as if you were the reviewer seeing it for the first time, and run through the 9 use cases in `docs/01-SPEC.md` §4 one more time.

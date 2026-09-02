@@ -13,6 +13,7 @@ from scraper.common.normalize import parse_price
 @dataclass
 class QueryPlan:
     source_site: str | None = None
+    record_type: str | None = None
     city: str | None = None
     country: str | None = None
     category: str | None = None
@@ -28,8 +29,11 @@ class QueryPlan:
     entity_source_site: str | None = None
     entity_source_id: str | None = None
     entity_name: str | None = None
+    entity_is_active: bool | None = None
     cross_source: bool = False
     content_intent: bool = False
+    content_type: str | None = None
+    overview_intent: bool = False
     location_mentioned: str | None = None
     location_recognized: bool = True
     notes: list[str] = field(default_factory=list)
@@ -46,11 +50,11 @@ def _normalized_phrase(value: str) -> str:
     return " ".join(re.findall(r"[a-z0-9]+", value.lower()))
 
 
-def _resolve_entity(db: Database, text: str) -> tuple[str, str, str] | None:
+def _resolve_entity(db: Database, text: str) -> tuple[str, str, str, bool] | None:
     haystack = f" {_normalized_phrase(text)} "
-    matches: list[tuple[int, str, str, str]] = []
+    matches: list[tuple[int, str, str, str, bool]] = []
     with db.connect() as conn:
-        rows = conn.execute("SELECT source_site,source_id,name FROM listings WHERE is_active=1").fetchall()
+        rows = conn.execute("SELECT source_site,source_id,name,is_active FROM listings").fetchall()
     for row in rows:
         source_phrase = _normalized_phrase(str(row["source_id"]).replace("--", " ").replace("-", " "))
         name_phrase = _normalized_phrase(str(row["name"]))
@@ -59,12 +63,12 @@ def _resolve_entity(db: Database, text: str) -> tuple[str, str, str] | None:
         aliases = {alias for alias in aliases if len(alias) >= 3 and alias not in {"property", "project", "apartment", "villa", "residences"}}
         matched = max((len(alias) for alias in aliases if f" {alias} " in haystack), default=0)
         if matched:
-            matches.append((matched, str(row["source_site"]), str(row["source_id"]), str(row["name"])))
+            matches.append((matched, str(row["source_site"]), str(row["source_id"]), str(row["name"]), bool(row["is_active"])))
     if not matches:
         return None
     matches.sort(reverse=True)
     top_score = matches[0][0]
-    top = {(site, source_id, name) for score, site, source_id, name in matches if score == top_score}
+    top = {(site, source_id, name, active) for score, site, source_id, name, active in matches if score == top_score}
     return next(iter(top)) if len(top) == 1 else None
 
 
@@ -90,6 +94,12 @@ def plan_query(db: Database, query: str, history: list[str] | None = None) -> Qu
 
     if re.search(r"\b(?:news|press release|press releases|announcement|announcements|announced)\b|what(?:'s| is) new", effective_lower):
         plan.content_intent = True
+        plan.content_type = "press_release"
+    elif re.search(r"\b(?:who is|about|company|corporate|investor relations)\b.*\b(?:darglobal|dar global)\b|\b(?:darglobal|dar global)\b.*\b(?:company|corporate|investor relations)\b", effective_lower):
+        plan.content_intent = True
+        plan.content_type = "company_info"
+    if re.search(r"\b(?:everything|overview|entire corpus|all properties|all listings)\b|what do you have", effective_lower):
+        plan.overview_intent = True
 
     mentions_darglobal = "darglobal" in effective_lower or "dar global" in effective_lower
     mentions_wasalt = "wasalt" in effective_lower
@@ -103,9 +113,13 @@ def plan_query(db: Database, query: str, history: list[str] | None = None) -> Qu
         plan.source_site = "wasalt"
         plan.structured_intent = True
 
+    if re.search(r"\bprojects\b", effective_lower):
+        plan.record_type = "project"
+        plan.structured_intent = True
+
     entity = _resolve_entity(db, effective)
     if entity:
-        plan.entity_source_site, plan.entity_source_id, plan.entity_name = entity
+        plan.entity_source_site, plan.entity_source_id, plan.entity_name, plan.entity_is_active = entity
         if not plan.cross_source:
             plan.source_site = plan.entity_source_site
         plan.structured_intent = True
@@ -182,7 +196,7 @@ def structured_search(db: Database, plan: QueryPlan, limit: int = 5) -> list[dic
         return []
     if plan.entity_source_site and plan.entity_source_id:
         with db.connect() as conn:
-            entity = conn.execute("SELECT * FROM listings WHERE is_active=1 AND source_site=? AND source_id=?", [plan.entity_source_site, plan.entity_source_id]).fetchone()
+            entity = conn.execute("SELECT * FROM listings WHERE source_site=? AND source_id=?", [plan.entity_source_site, plan.entity_source_id]).fetchone()
         output = [row_to_listing(entity)] if entity else []
         if not plan.cross_source or len(output) >= limit:
             return output
@@ -190,6 +204,7 @@ def structured_search(db: Database, plan: QueryPlan, limit: int = 5) -> list[dic
         params: list[Any] = ["wasalt" if plan.entity_source_site == "darglobal" else "darglobal"]
         if plan.city: clauses.append("location_city=?"); params.append(plan.city)
         if plan.country: clauses.append("location_country=?"); params.append(plan.country)
+        if plan.record_type: clauses.append("record_type=?"); params.append(plan.record_type)
         if plan.category: clauses.append("property_category=?"); params.append(plan.category)
         if plan.listing_type: clauses.append("listing_type=?"); params.append(plan.listing_type)
         if plan.bedrooms_min is not None: clauses.append("bedrooms_max>=?"); params.append(plan.bedrooms_min)
@@ -203,6 +218,7 @@ def structured_search(db: Database, plan: QueryPlan, limit: int = 5) -> list[dic
     clauses = ["is_active=1"]
     params: list[Any] = []
     if plan.source_site: clauses.append("source_site=?"); params.append(plan.source_site)
+    if plan.record_type: clauses.append("record_type=?"); params.append(plan.record_type)
     if plan.city: clauses.append("location_city=?"); params.append(plan.city)
     if plan.country: clauses.append("location_country=?"); params.append(plan.country)
     if plan.category: clauses.append("property_category=?"); params.append(plan.category)

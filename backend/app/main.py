@@ -89,7 +89,9 @@ async def process_chat(request: Request, body: ChatRequest) -> ChatResponse:
     history_text = [row["content"] for row in history_rows if row["role"] == "user"]
     db.add_message(conversation_id, "user", body.message)
     result = retrieval.retrieve(body.message, history_text)
-    if result.no_match_reason:
+    if result.direct_answer:
+        answer = result.direct_answer; citations = []; model_used = None; degraded = False; grounded = True; mode = "structured"
+    elif result.no_match_reason:
         answer, citations = deterministic_answer(body.message, result.chunks, reason=result.no_match_reason)
         model_used = None; degraded = False; grounded = False; mode = "none"
     else:

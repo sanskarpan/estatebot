@@ -13,5 +13,6 @@ data/*
 !data/.gitkeep
 !data/seed_corpus.json
 !data/darglobal_browser_capture.json
+!data/wasalt_project_capture.json
 .DS_Store
 *.log

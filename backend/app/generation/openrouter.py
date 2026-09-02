@@ -108,5 +108,9 @@ def deterministic_answer(question: str, context: list[RetrievedChunk], *, reason
         lines.append(f"- **{item.name}** ({item.source_site}) — {item.text[:420]}")
         citations.append(Citation(source_id=item.source_id, source_site=item.source_site, source_url=item.source_url, name=item.name))
         seen.add(item.source_id)
-    lines.append("Prices and availability are only as current as the last scrape; verify details at the cited source.")
+    listing_chunk_types = {"structured", "overview", "location", "pricing", "units", "amenities"}
+    if any(item.chunk_type in listing_chunk_types for item in context):
+        lines.append("Prices and availability are only as current as the last scrape; verify details at the cited source.")
+    else:
+        lines.append("This information is only as current as the last capture; verify details at the cited source.")
     return "\n".join(lines), citations

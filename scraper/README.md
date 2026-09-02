@@ -20,3 +20,12 @@ PYTHONPATH=. .venv/bin/python -m ingestion.export_seed
 ```
 
 This is a checked-in snapshot fallback, not hidden bypass logic. The ordinary HTTP spider remains the preferred future refresh path when the source permits it.
+
+The initial rendered result set of Wasalt's public Projects search exposed 32 project detail pages. Their visible public DOM capture is checked in at `data/wasalt_project_capture.json` and normalized with:
+
+```bash
+PYTHONPATH=. .venv/bin/python -m ingestion.import_wasalt_projects
+PYTHONPATH=. .venv/bin/python -m ingestion.export_seed
+```
+
+This capture uses the same constraints: no authenticated state, challenge solving, private APIs, or hidden browser data. It complements the ordinary bounded sale/rent spider; it does not claim exhaustive coverage of all 80 results advertised by the dynamic search page.

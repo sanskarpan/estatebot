@@ -4,6 +4,7 @@ from pathlib import Path
 from scraper.darglobal.parsers import parse_project
 from scraper.darglobal.browser_capture import company_document_from_capture, document_from_capture, listing_from_capture
 from scraper.wasalt.parsers import parse_listing
+from scraper.wasalt.browser_capture import project_from_capture
 
 
 def test_darglobal_project_fixture():
@@ -15,6 +16,8 @@ def test_darglobal_project_fixture():
     assert item.bedrooms_min == 0
     assert "3br" in item.unit_types_normalized
     assert item.price_amount is None
+    assert item.expected_completion_date.isoformat() == "2027-10-01"
+    assert item.expected_completion_raw == "completion Q4 2027"
 
 
 def test_wasalt_listing_fixture():
@@ -89,3 +92,54 @@ def test_darglobal_company_capture_normalizes_body():
     assert item.source_id == "about"
     assert item.content_type == "company_info"
     assert item.body_text == "A global luxury real estate developer."
+
+
+def test_wasalt_project_browser_capture_normalizes_project():
+    record = {
+        "href": "https://wasalt.sa/en/project/Riyadh/sadeem-town-villa-100319",
+        "card_text": "2.29M - 2.50M Sadeem Town Villa",
+        "images": [
+            "https://cdn.wasalt.sa/images/wasalt-logo.svg",
+            "https://imagedelivery.net/example/production/compound/100319/images/project.jpg",
+            "https://imagedelivery.net/example/production/compound/999999/images/related.jpg",
+        ],
+        "text": """Home
+Properties for Sale in Riyadh
+Sadeem Town Villa
+Project
+For Sale
+Completion in 2027
+Sadeem Town Villa
+As-Safa, Center, RiyadhMap view
+4,5,6
+Bedrooms
+5,6,7
+Bathrooms
+325 - 440 sqm
+Built-Up Area
+Available Property Types
+Villa (3)
+Amenities
+Security System
+Smart Home System
+About Project
+A family villa development.
+Units Available (3 of 3)
+For Sale
+Starts From
+2.29M
+3
+Example Developer
+Ref no.
+100319""",
+    }
+    item = project_from_capture(record, "2026-09-02T14:00:00Z")
+    assert item.record_type == "project"
+    assert item.location_city == "Riyadh"
+    assert item.location_area == "As-Safa"
+    assert item.property_category == "villa"
+    assert item.developer_name == "Example Developer"
+    assert item.image_urls == ["https://imagedelivery.net/example/production/compound/100319/images/project.jpg"]
+    assert item.price_amount == 2290000
+    assert (item.bedrooms_min, item.bedrooms_max) == (4, 6)
+    assert item.expected_completion_date.isoformat() == "2027-01-01"

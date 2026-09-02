@@ -52,3 +52,14 @@ def test_deterministic_price_answer_is_explicit_when_unpublished():
     answer, citations = deterministic_answer("How much does DG1 cost?", context)
     assert "does not publish a price" in answer
     assert citations[0].source_id == "dg1"
+
+
+def test_deterministic_document_answer_uses_content_disclaimer():
+    context = [RetrievedChunk(
+        "content-darglobal-about", "darglobal", "about", "https://darglobal.co.uk/about",
+        "Discover DarGlobal", "company_info", "DarGlobal is a global real estate developer.", -1,
+    )]
+    answer, citations = deterministic_answer("Who is DarGlobal?", context)
+    assert "last capture" in answer
+    assert "Prices and availability" not in answer
+    assert citations[0].source_id == "about"

@@ -111,6 +111,7 @@ CITY_ALIASES = {
     "khobar": "Khobar", "al khobar": "Khobar", "al-khobar": "Khobar", "mecca": "Mecca", "makkah": "Mecca",
     "medina": "Medina", "madinah": "Medina", "muscat": "Muscat", "dubai": "Dubai", "london": "London",
     "benahavis": "Benahavís", "benahavís": "Benahavís", "doha": "Doha", "jeddah city": "Jeddah",
+    "aldammam": "Dammam", "makkah al mukarramah": "Mecca", "al ahsa": "Al Ahsa",
 }
 
 
@@ -135,6 +136,12 @@ def parse_date(value: str | None) -> date | None:
     raw = clean_text(value)
     if not raw:
         return None
+    quarter = re.search(r"\bQ([1-4])\s+(20\d{2})\b", raw, re.IGNORECASE)
+    if quarter:
+        return date(int(quarter.group(2)), 1 + (int(quarter.group(1)) - 1) * 3, 1)
+    year = re.search(r"\b(20\d{2})\b", raw)
+    if year and re.search(r"\b(?:completion|handover|delivery|building)\b", raw, re.IGNORECASE):
+        return date(int(year.group(1)), 1, 1)
     for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%B %d, %Y", "%d %B %Y", "%B %Y", "%Y"):
         try:
             parsed = date.fromisoformat(raw) if fmt == "%Y-%m-%d" else __import__("datetime").datetime.strptime(raw, fmt).date()

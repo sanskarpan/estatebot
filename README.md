@@ -3,9 +3,9 @@
 **Assignment:** AI Full Stack Engineer / Forward Deployed Engineer (FDE) — Technical Assessment
 **Deliverable type:** Deployed, publicly reachable AI chatbot grounded in scraped data from [DarGlobal](https://darglobal.co.uk) and [Wasalt](https://wasalt.sa) (also reachable via `wasalt.com`), containerised with Docker, powered by a free model on [OpenRouter](https://openrouter.ai).
 
-This repository is a **build package**: a complete, unambiguous specification that any competent AI coding assistant (or human engineer) can execute end-to-end without needing to ask clarifying questions. It exists so that the eventual implementation leaves no gap the reviewer could point to and ask "why wasn't this handled?"
+This repository is a **complete implementation and delivery package**: runnable application code, auditable source captures, a normalized seed corpus, automated tests, container/deployment configuration, and the specifications and decision records behind them. The documentation remains deliberately explicit so another engineer can reproduce, audit, refresh, and deploy the system without reverse-engineering its intent.
 
-> **Current repository status:** the runnable local implementation and two-source seed corpus are present: 36 DarGlobal projects, 15 DarGlobal press releases, 2 DarGlobal company documents, 180 Wasalt listings, and 3 Wasalt city guides. DarGlobal's plain HTTP path was challenged, so its visible public pages were captured through a standard browser session and imported by a dedicated auditable normalizer; see [`scraper/live-findings.md`](scraper/live-findings.md). Public deployment and live OpenRouter QA still require account credentials. See [`docs/IMPLEMENTATION-STATUS.md`](docs/IMPLEMENTATION-STATUS.md) for evidence and remaining gates.
+> **Current repository status:** the runnable local implementation and two-source seed corpus are present: 36 DarGlobal projects, 15 DarGlobal press releases, 2 DarGlobal company documents, 180 Wasalt sale/rent listings, 32 Wasalt projects, and 3 Wasalt city guides. Both sites' visible public pages that required a normal browser path were captured and imported through dedicated auditable normalizers; see [`scraper/live-findings.md`](scraper/live-findings.md). Public deployment and live OpenRouter QA still require account credentials. See [`docs/IMPLEMENTATION-STATUS.md`](docs/IMPLEMENTATION-STATUS.md) for evidence and remaining gates.
 
 ## Run locally
 
@@ -14,7 +14,7 @@ cp .env.example .env
 docker compose up --build api
 ```
 
-Open `http://localhost:8000`. A fresh data volume bootstraps from the checked-in `data/seed_corpus.json`, so the UI is usable without an API key; it falls back to deterministic, cited answers when OpenRouter is not configured. To refresh the corpus, run `docker compose run --rm scraper` followed by `docker compose run --rm ingestion`, then restart `api`.
+Open `http://localhost:8000`. A fresh data volume bootstraps from the checked-in `data/seed_corpus.json`, so the UI is usable without an API key; it falls back to deterministic, cited answers when OpenRouter is not configured. Let the API initialize that baseline before the first refresh. Then run `docker compose run --rm scraper`, `docker compose run --rm ingestion`, and `docker compose restart api`; partial or challenged refreshes preserve the last good source records.
 
 For a Python-only development setup, install `backend/requirements-dev.txt`, then run `PYTHONPATH=. .venv/bin/python -m pytest` and `make run-api`.
 
@@ -39,8 +39,9 @@ If you are an AI assistant (or engineer) picking this up cold, read the document
 | 8 | `docs/08-DEPLOYMENT.md` | Docker, docker-compose, hosting target options, environment variables, CI/CD, secrets |
 | 9 | `docs/09-TESTING-QA.md` | Test plan: unit/integration/e2e, manual QA script, performance & security testing |
 | 10 | `docs/10-EDGE-CASES.md` | Exhaustive edge-case catalog across scraping, data, RAG, chat, infra |
-| 11 | `CHECKLIST.md` | The master, sequential, checkbox-driven build checklist — the actual execution plan |
-| 12 | `SUBMISSION.md` | What must be true before you say "done"; maps every assignment requirement to concrete deliverables |
+| 11 | `docs/EDGE-CASE-TRACEABILITY.md` | Evidence map from every edge case to automated, inspected, live, or pending deployed QA |
+| 12 | `CHECKLIST.md` | The master, sequential, checkbox-driven build checklist — the actual execution plan |
+| 13 | `SUBMISSION.md` | What must be true before you say "done"; maps every assignment requirement to concrete deliverables |
 | — | `.env.example` | Every environment variable the system needs, documented |
 
 **Rule of thumb:** `docs/*.md` define *what* and *why*. `CHECKLIST.md` defines *in what order* and *how to verify each step*. `SUBMISSION.md` is the final gate. If any instruction in `CHECKLIST.md` seems to conflict with a `docs/*.md` file, the `docs/*.md` file is authoritative — the checklist is a task-tracker, not a spec.

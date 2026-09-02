@@ -16,7 +16,7 @@ Fill this in completely before sending anything to the reviewer. Nothing here sh
 ## 2. Assignment requirement checklist (must all be checked)
 
 - [x] Publicly available data collected from DarGlobal — 36 public project pages, the 15 press releases exposed by the current public press index, and 2 company/investor pages were captured through a normal unauthenticated browser session and normalized through the audited capture importer
-- [x] Publicly available data scraped from Wasalt — 180 active listings plus 3 city-guide documents; Dammam, Jeddah, Riyadh
+- [x] Publicly available data collected from Wasalt — 180 active sale/rent listings, 32 public project pages, and 3 city-guide documents across the bounded listing cities plus the public project locations
 - [x] AI chatbot built using the collected data — automated local QA verifies grounded deterministic retrieval; deployed live-model QA remains outstanding
 - [ ] Free OpenRouter model in use — configured chain: `google/gemma-4-31b-it:free` → `z-ai/glm-5.2:free` → `minimax/minimax-m3:free`; no API key is configured in this workspace
 - [x] Containerised with Docker — Compose config and fresh seeded API-container smoke test verified locally
@@ -27,13 +27,13 @@ Fill this in completely before sending anything to the reviewer. Nothing here sh
 
 | Metric | Value |
 |---|---|
-| Total active listings/projects | 216 |
+| Total active listings/projects | 248 |
 | DarGlobal records | 36 projects |
-| Wasalt records | 180 |
+| Wasalt records | 212: 180 sale/rent listings + 32 projects |
 | Content documents (press/city-guides/etc.) | 20 total: 15 DarGlobal press releases + 2 DarGlobal company documents + 3 Wasalt city guides |
-| Cities covered | Benahavís, Dammam, Doha, Dubai, Jeddah, London, Muscat, Ras Al Khaimah, Riyadh; two projects are country/area-only |
+| Cities covered | Al Ahsa, Benahavís, Dammam, Doha, Dubai, Jeddah, Khobar, London, Mecca, Medina, Muscat, Ras Al Khaimah, Riyadh; two DarGlobal projects are country/area-only |
 | Countries covered | Maldives, Oman, Qatar, Saudi Arabia, Spain, United Arab Emirates, United Kingdom |
-| Last data capture completed at (UTC) | `2026-09-02T13:00:00Z` |
+| Last data capture completed at (UTC) | `2026-09-02T14:00:00Z` |
 
 ## 4. Technical summary
 
@@ -58,10 +58,10 @@ List anything from `docs/10-EDGE-CASES.md` or `docs/09-TESTING-QA.md` that wasn'
 
 Current limitations:
 - DarGlobal's plain-HTTP path returned an Incapsula shell. Its 36 public project pages, 15 articles exposed by the current press index, and About/Investor Relations pages were therefore collected through a standard unauthenticated browser session; the audit capture is checked in. The index's visible “Load More” control did not expose additional entries in this capture session, so the corpus contains 15 rather than the 20–30 target maximum.
-- Wasalt scope is a bounded English sale/rent detail crawl for Dammam, Jeddah, and Riyadh, plus city guides; auctions, plans, and unverified dynamic sections remain deferred.
+- Wasalt scope is a bounded English sale/rent detail crawl for Dammam, Jeddah, and Riyadh, 32 records from the initial public Projects result set, and three city guides. Auctions are hosted on a separate surface and plans/unexposed result pages remain outside this bounded assessment snapshot.
 - The current local run has no OpenRouter key, so automated responses use deterministic cited facts. Live fallback-chain and model-quality QA still need a deployment secret.
 - No hosting account, public repository, or HTTPS URL has been provisioned from this workspace. A free-tier `render.yaml` Blueprint is ready; the seed rebuilds ephemeral SQLite state on restart.
-- All 17 manual deployed-URL QA items in `docs/09-TESTING-QA.md` remain to be executed after deployment; 34 automated tests pass locally, including validation of every checked-in seed record.
+- All 17 manual deployed-URL QA items in `docs/09-TESTING-QA.md` remain to be executed after deployment; 50 automated tests pass locally, including validation of every checked-in seed record and the edge-case paths mapped in `docs/EDGE-CASE-TRACEABILITY.md`.
 
 ## 7. How to run locally (for the reviewer, if they want to verify the source too)
 
@@ -73,7 +73,7 @@ docker compose up --build api
 # open http://localhost:8000
 ```
 
-The checked-in seed snapshot makes the API usable immediately. Run the scraper and ingestion commands before `docker compose up` when refreshing data.
+The checked-in seed snapshot makes the API usable immediately. For a refresh, start the API once to bootstrap the last-known-good seed, run the scraper and ingestion services, then restart the API as described in the root README; this ordering ensures a partial or challenged scrape cannot erase the baseline corpus.
 
 ## 8. Reviewer quick-test prompts
 
