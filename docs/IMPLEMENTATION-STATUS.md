@@ -41,7 +41,7 @@ The scraper was exercised against the live public sites. DarGlobal plain-HTTP pr
 ## Remaining release gates
 
 1. Configure a real OpenRouter API key in the deployment secret store and run live model fallback/manual QA. Local deterministic mode and mocked provider fallback are verified.
-2. Push the repository to an accessible remote and connect the included `render.yaml` Blueprint. No hosting account, remote repository URL, or deployment credentials are available in this workspace.
+2. Connect the public `https://github.com/sanskarpan/estatebot` repository to the included `render.yaml` Blueprint. The repository is published, but the Render browser session is not authenticated and no deployment credentials are available in this workspace.
 3. Execute and record the 17-item deployed-URL manual QA script from [`docs/09-TESTING-QA.md`](09-TESTING-QA.md), including mobile, keyboard, cold-start, citation-link, and rate-limit checks.
 
 Until these gates are closed, `SUBMISSION.md` is intentionally not marked as a final submission; the two-source corpus and application are complete locally, but public delivery is not yet proven.

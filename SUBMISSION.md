@@ -9,7 +9,7 @@ Fill this in completely before sending anything to the reviewer. Nothing here sh
 | Item | Value |
 |---|---|
 | **Live URL** | Not deployed from this workspace |
-| **Repository** | Local workspace only: `/Users/sanskar/Developer/estatebot` |
+| **Repository** | `https://github.com/sanskarpan/estatebot` (public) |
 | **Hosting platform used** | None yet |
 | **API docs (Swagger)** | `http://localhost:8000/docs` when run locally |
 
@@ -66,7 +66,7 @@ Current limitations:
 ## 7. How to run locally (for the reviewer, if they want to verify the source too)
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/sanskarpan/estatebot.git
 cd estatebot
 cp .env.example .env   # fill in OPENROUTER_API_KEY at minimum
 docker compose up --build api
