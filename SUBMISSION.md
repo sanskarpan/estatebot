@@ -10,6 +10,7 @@ Fill this in completely before sending anything to the reviewer. Nothing here sh
 |---|---|
 | **Live URL** | Not deployed from this workspace |
 | **Repository** | `https://github.com/sanskarpan/estatebot` (public) |
+| **Continuous integration** | `https://github.com/sanskarpan/estatebot/actions/workflows/ci.yml` (passing on `main`) |
 | **Hosting platform used** | None yet |
 | **API docs (Swagger)** | `http://localhost:8000/docs` when run locally |
 

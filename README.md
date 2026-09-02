@@ -1,5 +1,7 @@
 # DarGlobal × Wasalt Real Estate AI Chatbot
 
+[![EstateBot CI](https://github.com/sanskarpan/estatebot/actions/workflows/ci.yml/badge.svg)](https://github.com/sanskarpan/estatebot/actions/workflows/ci.yml)
+
 **Assignment:** AI Full Stack Engineer / Forward Deployed Engineer (FDE) — Technical Assessment
 **Deliverable type:** Deployed, publicly reachable AI chatbot grounded in scraped data from [DarGlobal](https://darglobal.co.uk) and [Wasalt](https://wasalt.sa) (also reachable via `wasalt.com`), containerised with Docker, powered by a free model on [OpenRouter](https://openrouter.ai).
 
