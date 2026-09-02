@@ -28,6 +28,7 @@ def test_static_frontend_keeps_resilience_and_accessibility_contracts():
     assert "state.conversationId = null" in javascript
     assert "input.value = ''" in javascript
     assert ":focus-visible" in css
+    assert "textarea:focus-visible { outline: 0; }" in css
     assert "min-height: 48px" in css
     assert "prefers-reduced-motion" in css
     assert "overflow-wrap: break-word" in css
