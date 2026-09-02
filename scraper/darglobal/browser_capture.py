@@ -187,3 +187,30 @@ def document_from_capture(record: dict[str, Any], captured_at: str | None = None
         scraped_at=timestamp,
         updated_at=timestamp,
     )
+
+
+def company_document_from_capture(record: dict[str, Any], captured_at: str | None = None) -> ContentDocument:
+    """Normalize a public DarGlobal company or investor-information page."""
+    if record.get("error"):
+        raise ValueError(f"capture failed for {record.get('source_url')}: {record['error']}")
+    url = str(record.get("source_url") or "")
+    parsed = urlparse(url)
+    if "darglobal.co.uk" not in parsed.netloc or parsed.path.rstrip("/") not in {"/about", "/investor"}:
+        raise ValueError("capture source URL is not an approved DarGlobal company page")
+    title = clean_text(record.get("title") or record.get("document_title")) or "DarGlobal company information"
+    body_lines = [line.strip() for line in str(record.get("body_text") or "").splitlines() if line.strip()]
+    title_index = next((index for index, line in enumerate(body_lines) if clean_text(line) == title), None)
+    if title_index is not None:
+        body_lines = body_lines[title_index + 1:]
+    body = clean_text("\n".join(body_lines)) or title
+    timestamp = datetime.fromisoformat(captured_at.replace("Z", "+00:00")) if captured_at else datetime.now(timezone.utc)
+    return ContentDocument(
+        source_site="darglobal",
+        source_id=parsed.path.strip("/").lower(),
+        source_url=url,
+        content_type="company_info",
+        title=title,
+        body_text=body[:24000],
+        scraped_at=timestamp,
+        updated_at=timestamp,
+    )

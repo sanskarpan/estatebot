@@ -19,16 +19,16 @@
 
 | Check | Result |
 |---|---|
-| `PYTHONPATH=. .venv/bin/python -m pytest -q` | 33 passed; one upstream Starlette/httpx deprecation warning |
+| `PYTHONPATH=. .venv/bin/python -m pytest -q` | 34 passed; one upstream Starlette/httpx deprecation warning |
 | `docker compose config --quiet` | Passed |
 | API image build | Passed (`estatebot-api:local`) |
 | Fresh-container `/api/health` | HTTP 200; 36 DarGlobal + 180 Wasalt records loaded from seed |
 | Fresh-container `/api/chat` | HTTP 200; named-project and cross-source responses grounded with valid citations |
 | Current active listings | 216 total: 36 DarGlobal projects and 180 Wasalt listings |
-| Current content documents | 18 total: 15 dated DarGlobal press releases and 3 Wasalt city guides |
+| Current content documents | 20 total: 15 dated DarGlobal press releases, 2 DarGlobal company documents, and 3 Wasalt city guides |
 | Cities | Benahavís, Dammam, Doha, Dubai, Jeddah, London, Muscat, Ras Al Khaimah, Riyadh |
 | Countries | Maldives, Oman, Qatar, Saudi Arabia, Spain, United Arab Emirates, United Kingdom |
-| Search index | 783 active chunks |
+| Search index | 785 active chunks |
 | Runtime resource check | Healthy container at 51.8 MiB idle RAM; 200,409,071-byte (~191 MiB) image |
 | OpenRouter catalog check | All three configured IDs present with zero prompt/completion pricing; context windows 262,144 / 256,000 / 1,048,576 tokens |
 
@@ -36,7 +36,7 @@ The first 150-row crawl contained three landing-page false positives; those rows
 
 ## Live-source findings
 
-The scraper was exercised against the live public sites. DarGlobal plain-HTTP probes returned an Incapsula shell, so the HTTP crawler correctly skipped them. The same public project index, all 36 linked project pages, and all 15 articles exposed by the current press index loaded normally in a standard unauthenticated browser; their visible DOM was captured and imported through a dedicated, tested normalization path without exporting cookies or solving/bypassing a challenge. The press index's visible “Load More” control did not expose additional links in this session. Wasalt robots and CDN sitemaps were readable, and a bounded detail crawl produced 180 records. Full evidence is in [`scraper/live-findings.md`](../scraper/live-findings.md).
+The scraper was exercised against the live public sites. DarGlobal plain-HTTP probes returned an Incapsula shell, so the HTTP crawler correctly skipped them. The same public project index, all 36 linked project pages, all 15 articles exposed by the current press index, and the About/Investor Relations pages loaded normally in a standard unauthenticated browser; their visible DOM was captured and imported through a dedicated, tested normalization path without exporting cookies or solving/bypassing a challenge. The press index's visible “Load More” control did not expose additional links in this session. Wasalt robots and CDN sitemaps were readable, and a bounded detail crawl produced 180 records. Full evidence is in [`scraper/live-findings.md`](../scraper/live-findings.md).
 
 ## Remaining release gates
 

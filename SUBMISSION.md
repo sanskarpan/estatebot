@@ -15,7 +15,7 @@ Fill this in completely before sending anything to the reviewer. Nothing here sh
 
 ## 2. Assignment requirement checklist (must all be checked)
 
-- [x] Publicly available data collected from DarGlobal — 36 public project pages and the 15 press releases exposed by the current public press index were captured through a normal unauthenticated browser session and normalized through the audited capture importer
+- [x] Publicly available data collected from DarGlobal — 36 public project pages, the 15 press releases exposed by the current public press index, and 2 company/investor pages were captured through a normal unauthenticated browser session and normalized through the audited capture importer
 - [x] Publicly available data scraped from Wasalt — 180 active listings plus 3 city-guide documents; Dammam, Jeddah, Riyadh
 - [x] AI chatbot built using the collected data — automated local QA verifies grounded deterministic retrieval; deployed live-model QA remains outstanding
 - [ ] Free OpenRouter model in use — configured chain: `google/gemma-4-31b-it:free` → `z-ai/glm-5.2:free` → `minimax/minimax-m3:free`; no API key is configured in this workspace
@@ -30,7 +30,7 @@ Fill this in completely before sending anything to the reviewer. Nothing here sh
 | Total active listings/projects | 216 |
 | DarGlobal records | 36 projects |
 | Wasalt records | 180 |
-| Content documents (press/city-guides/etc.) | 18 total: 15 DarGlobal press releases + 3 Wasalt city guides |
+| Content documents (press/city-guides/etc.) | 20 total: 15 DarGlobal press releases + 2 DarGlobal company documents + 3 Wasalt city guides |
 | Cities covered | Benahavís, Dammam, Doha, Dubai, Jeddah, London, Muscat, Ras Al Khaimah, Riyadh; two projects are country/area-only |
 | Countries covered | Maldives, Oman, Qatar, Saudi Arabia, Spain, United Arab Emirates, United Kingdom |
 | Last data capture completed at (UTC) | `2026-09-02T13:00:00Z` |
@@ -57,11 +57,11 @@ Fill this in completely before sending anything to the reviewer. Nothing here sh
 List anything from `docs/10-EDGE-CASES.md` or `docs/09-TESTING-QA.md` that wasn't fully covered, any scope explicitly deferred per `docs/03-DATA-SCRAPING-SPEC.md` §7, and any host-specific caveats (cold starts, data-refresh cadence, etc.).
 
 Current limitations:
-- DarGlobal's plain-HTTP path returned an Incapsula shell. Its 36 public project pages and the 15 articles exposed by the current press index were therefore collected through a standard unauthenticated browser session; the audit capture is checked in. The index's visible “Load More” control did not expose additional entries in this capture session, so the corpus contains 15 rather than the 20–30 target maximum.
+- DarGlobal's plain-HTTP path returned an Incapsula shell. Its 36 public project pages, 15 articles exposed by the current press index, and About/Investor Relations pages were therefore collected through a standard unauthenticated browser session; the audit capture is checked in. The index's visible “Load More” control did not expose additional entries in this capture session, so the corpus contains 15 rather than the 20–30 target maximum.
 - Wasalt scope is a bounded English sale/rent detail crawl for Dammam, Jeddah, and Riyadh, plus city guides; auctions, plans, and unverified dynamic sections remain deferred.
 - The current local run has no OpenRouter key, so automated responses use deterministic cited facts. Live fallback-chain and model-quality QA still need a deployment secret.
 - No hosting account, public repository, or HTTPS URL has been provisioned from this workspace. A free-tier `render.yaml` Blueprint is ready; the seed rebuilds ephemeral SQLite state on restart.
-- All 17 manual deployed-URL QA items in `docs/09-TESTING-QA.md` remain to be executed after deployment; 33 automated tests pass locally, including validation of every checked-in seed record.
+- All 17 manual deployed-URL QA items in `docs/09-TESTING-QA.md` remain to be executed after deployment; 34 automated tests pass locally, including validation of every checked-in seed record.
 
 ## 7. How to run locally (for the reviewer, if they want to verify the source too)
 

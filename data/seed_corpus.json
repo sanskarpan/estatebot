@@ -1,6 +1,6 @@
 {
   "generated_by": "scraper.run_all",
-  "generated_at": "2026-09-02T13:29:50.969729Z",
+  "generated_at": "2026-09-02T13:51:38.075313Z",
   "last_scrape_completed_at": "2026-09-02T13:00:00Z",
   "listings": [
     {
@@ -12395,6 +12395,34 @@
     }
   ],
   "content_documents": [
+    {
+      "id": "e16cb710-5dbf-4643-bf48-690fa95cfa3b",
+      "source_site": "darglobal",
+      "source_id": "about",
+      "source_url": "https://darglobal.co.uk/about",
+      "content_type": "company_info",
+      "title": "DISCOVER DARGLOBAL",
+      "publish_date": null,
+      "body_text": "LIVE ALL IN DarGlobal develops real estate that speaks for itself, where lifestyle and value come together. We work with trusted global partners to create homes, communities, and destinations that grow in meaning and worth over time. Our approach is simple: deliver with integrity, design with care, and build with purpose. For those who see the world as their home, DarGlobal offers not just investment, but belonging - value you can measure, and pride you can feel, and a legacy you can pass forward. LEARN MORE ZIAD EL CHAAR CHIEF EXECUTIVE OFFICER THE END RESULT THAT WE WANT TO DELIVER TO YOU IS SIMPLE: HAPPINESS. OUR GLOBAL PRESENCE PROUDLY LISTED ON THE LONDON STOCK EXCHANGE WHERE AMBITION LIVES. Our premium properties are strategically located in established and emerging markets. Creating opportunities to expand your world. While growing your wealth. Our international portfolio spans exquisite residences, vacation retreats, world-class hospitality, and developments with iconic luxury brands, including Aston Martin, and Lamborghini. Design. Lifestyle. Investment value. Every DarGlobal property seeks to enrich all three. YOUR WORLD. YOUR WAY. True global citizens want to live without borders. Or compromises. We offer thoughtfully designed homes in desirable settings that cater to your international way of life. Freedom and flexibility. Comfort and culture. Security and service. Wherever you go, find the fundamentals here. BUILT ON TRUST. We draw on over 31 years of luxury development experience to move with agility. Adapting to stay ahead of the market. Anticipating investors’ needs. Leveraging exceptional talent and partnerships. Always guided by purpose. Our commitment to quality and people-first thinking sets us apart. We don’t just build differently. We’re built different. INVESTOR RELATIONS LEARN MORE FIND YOUR NEXT INVESTMENT BOOK NOW GET IN TOUCH",
+      "related_source_ids": [],
+      "scraped_at": "2026-09-02T13:00:00Z",
+      "updated_at": "2026-09-02T13:00:00Z",
+      "is_active": true
+    },
+    {
+      "id": "1be7b401-a711-4ac3-97b6-d647d17363b7",
+      "source_site": "darglobal",
+      "source_id": "investor",
+      "source_url": "https://darglobal.co.uk/investor",
+      "content_type": "company_info",
+      "title": "INVESTOR RELATIONS",
+      "publish_date": null,
+      "body_text": "ABOUT INVESTORS CORPORATE GOVERNANCE DARGLOBAL TODAY DarGlobal PLC is an international real estate developer specializing in exclusive luxury developments across the world’s most coveted cosmopolitan cities. Catering to global citizens seeking prime investments, second homes, and luxury living, DarGlobal transforms real estate into economic catalysts, unlocking opportunities for both investors and the countries it enters. DarGlobal has partnered with over 10 world-renowned luxury brands, including Trump Organization , Aston Martin, Automobili Lamborghini, ELIE SAAB, Marriott Residences, Missoni, Mouawad, Pagani Automobili, and W Hotels. These collaborations offer unique investment opportunities in global cities, providing both wealth growth and protection. Listed on the London Stock Exchange, DarGlobal goes beyond property development, it drives economic transformation by attracting international clients and Foreign Direct Investment (FDI). FACTSHEET LEADERS IN REAL ESTATE Listed on the London Stock Exchange since 2023, we’re building on three decades of development know-how. Every opportunity is strategically curated and backed by market insight. Our partners represent forward-thinking luxury brands who share our passion for design: Aston Martin, W Hotels, Missoni, Automobili Lamborghini, to name a few. A GLOBAL PRESENCE From London to Dubai, our portfolio spans 14 cities and 9 countries, offering prime access to the world’s most dynamic markets. We serve our international clientele from hubs in New York, London, Marbella, Athens, Dubai, Jeddah, Riyadh, Muscat, and Doha. DARGLOBAL ORIGINS Dar Global was founded as the international arm of Dar Al Arkan Real Estate Development PJSC (“DAARE”), a leading real estate developer in Saudi Arabia with over 31 years of experience. Since its listing on the Saudi Stock Exchange in 2007, Dar Al Arkan has successfully delivered over 16,000 residential units and holds total assets of approximately US$8.9 billion. LEADERSHIP As DarGlobal’s CEO, Ziad El Chaar leads the company’s strategic expansion and partnerships. Under his stewardship, DarGlobal was listed on the London Stock Exchange in 2023 and has forged exclusive collaborations with likeminded luxury brands, including Missoni, Versace, Automobili Lamborghini, Aston Martin, and The Trump Organization. El Chaar has pioneered DarGlobal’s diversification into the hospitality sector, while also overseeing innovative development projects across key markets in the UAE, Oman, Saudi Arabia, Qatar, Spain and UK. ZIAD EL CHAAR CHIEF EXECUTIVE OFFICER DARGLOBAL AT A GLANCE TOTAL GDV USD23 BN PRESENCE IN CITIES 14 PRESENCE IN COUNTRIES 9 GLOBAL SALES OFFICES 9 MANAGEMENT TEAM ZIAD EL CHAAR Chief Executive Officer BILAL AL MATARNEH CEO - Development, Construction and Procurement SHIVARAMAN IYER Chief Financial Officer REDWAN ZAOUK Chief Operations Officer AYAT NASRALLAH Vice President - HR",
+      "related_source_ids": [],
+      "scraped_at": "2026-09-02T13:00:00Z",
+      "updated_at": "2026-09-02T13:00:00Z",
+      "is_active": true
+    },
     {
       "id": "472e69af-af68-49aa-9206-b9e1a6c25706",
       "source_site": "darglobal",

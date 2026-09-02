@@ -5,7 +5,7 @@
 
 This repository is a **build package**: a complete, unambiguous specification that any competent AI coding assistant (or human engineer) can execute end-to-end without needing to ask clarifying questions. It exists so that the eventual implementation leaves no gap the reviewer could point to and ask "why wasn't this handled?"
 
-> **Current repository status:** the runnable local implementation and two-source seed corpus are present: 36 DarGlobal projects, 15 DarGlobal press releases, 180 Wasalt listings, and 3 Wasalt city guides. DarGlobal's plain HTTP path was challenged, so its visible public pages were captured through a standard browser session and imported by a dedicated auditable normalizer; see [`scraper/live-findings.md`](scraper/live-findings.md). Public deployment and live OpenRouter QA still require account credentials. See [`docs/IMPLEMENTATION-STATUS.md`](docs/IMPLEMENTATION-STATUS.md) for evidence and remaining gates.
+> **Current repository status:** the runnable local implementation and two-source seed corpus are present: 36 DarGlobal projects, 15 DarGlobal press releases, 2 DarGlobal company documents, 180 Wasalt listings, and 3 Wasalt city guides. DarGlobal's plain HTTP path was challenged, so its visible public pages were captured through a standard browser session and imported by a dedicated auditable normalizer; see [`scraper/live-findings.md`](scraper/live-findings.md). Public deployment and live OpenRouter QA still require account credentials. See [`docs/IMPLEMENTATION-STATUS.md`](docs/IMPLEMENTATION-STATUS.md) for evidence and remaining gates.
 
 ## Run locally
 

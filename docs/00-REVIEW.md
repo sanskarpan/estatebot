@@ -1,6 +1,6 @@
 # 00 — Repository Review & Build-Pass Brief
 
-> **Post-build addendum (2026-09-02):** The implementation pass has created and verified the runnable local system, fixtures, Docker/CI/deployment configuration, and a two-source seed containing 36 DarGlobal projects, 15 DarGlobal press releases, 180 Wasalt listings, and 3 Wasalt city guides. The original review below is intentionally retained as the pre-build audit; current evidence and remaining release gates are maintained in [`IMPLEMENTATION-STATUS.md`](IMPLEMENTATION-STATUS.md).
+> **Post-build addendum (2026-09-02):** The implementation pass has created and verified the runnable local system, fixtures, Docker/CI/deployment configuration, and a two-source seed containing 36 DarGlobal projects, 15 DarGlobal press releases, 2 DarGlobal company documents, 180 Wasalt listings, and 3 Wasalt city guides. The original review below is intentionally retained as the pre-build audit; current evidence and remaining release gates are maintained in [`IMPLEMENTATION-STATUS.md`](IMPLEMENTATION-STATUS.md).
 
 ## Post-build resolution summary
 

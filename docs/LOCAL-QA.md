@@ -5,13 +5,13 @@
 
 ## Automated and container checks
 
-- `PYTHONPATH=. .venv/bin/python -m pytest -q`: 33 passed; one upstream Starlette/httpx deprecation warning.
+- `PYTHONPATH=. .venv/bin/python -m pytest -q`: 34 passed; one upstream Starlette/httpx deprecation warning.
 - `docker compose config --quiet`: passed.
 - `docker build -f backend/Dockerfile -t estatebot-api:local .`: passed.
-- Fresh `docker run` with an empty `/app/data` volume: `/api/health` returned 200 and bootstrapped 36 DarGlobal projects, 180 Wasalt listings, and 18 documents.
+- Fresh `docker run` with an empty `/app/data` volume: `/api/health` returned 200 and bootstrapped 36 DarGlobal projects, 180 Wasalt listings, and 20 documents.
 - Fresh container chat: “What is the cheapest property in Jeddah?” returned HTTP 200, `grounded=true`, deterministic degraded mode, and five valid citation objects.
 - Fresh-project `docker compose up --build -d api`: passed; `/api/health` returned 200 with all 216 records; the temporary test volume was removed afterward.
-- Bare final image startup (no Compose environment overrides): passed after Docker defaults were aligned with the embedded seed; `/api/health` returned 216 listings and 18 documents.
+- Bare final image startup (no Compose environment overrides): passed after Docker defaults were aligned with the embedded seed; `/api/health` returned 216 listings and 20 documents.
 - Final resource snapshot: Docker health `healthy`, 51.8 MiB idle RAM, 200,409,071-byte (~191 MiB) image.
 - Live public OpenRouter model catalog check: all three configured IDs were present with prompt/completion pricing reported as zero and context windows of 262,144, 256,000, and 1,048,576 tokens respectively. This verifies configuration metadata, not authenticated inference quality.
 - No API-key-shaped secret was found by the repository hygiene scan; `.env` is ignored and contains no key.
@@ -24,6 +24,7 @@
 | About/stats data contract | Pass | `/api/stats` and `/api/health` agree on corpus counts and the UTC snapshot timestamp. |
 | DarGlobal project questions | Pass | All 36 visible public project pages normalized; named DG1, Oman-villa, Astera comparison, and Trump-brand retrieval checks pass. |
 | DarGlobal press content | Pass | All 15 articles exposed by the current public press index were normalized with source URL, title, publication date, and cleaned body text. |
+| DarGlobal company content | Pass | Public About and Investor Relations pages were normalized as company-information documents; named brand partnerships remain attached to their project records. |
 | Recent-news retrieval | Pass | “What is the latest DarGlobal news?” routes to press releases in descending publication-date order and cites the canonical article URL. |
 | Wasalt city/category questions | Pass | Fixture and seeded smoke checks cover Jeddah, Riyadh, and Dammam. |
 | Numeric/superlative query | Pass | Structured SQL excludes null prices and preserves ascending order for “cheapest”. |

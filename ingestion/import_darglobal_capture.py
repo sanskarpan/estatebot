@@ -8,7 +8,7 @@ from pathlib import Path
 from backend.app.config import get_settings
 from backend.app.db.database import Database
 from ingestion.build_index import build_index
-from scraper.darglobal.browser_capture import document_from_capture, listing_from_capture
+from scraper.darglobal.browser_capture import company_document_from_capture, document_from_capture, listing_from_capture
 
 
 def import_capture(db: Database, path: str | Path = "data/darglobal_browser_capture.json") -> int:
@@ -20,6 +20,9 @@ def import_capture(db: Database, path: str | Path = "data/darglobal_browser_capt
         count += 1
     for raw in payload.get("press_records", []):
         db.upsert_content(document_from_capture(raw, captured_at))
+        count += 1
+    for raw in payload.get("company_records", []):
+        db.upsert_content(company_document_from_capture(raw, captured_at))
         count += 1
     if count:
         db.set_meta("darglobal_browser_capture_at", str(captured_at or "unknown"))

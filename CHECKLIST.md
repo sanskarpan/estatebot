@@ -23,7 +23,7 @@ This is the **execution plan**. Work top to bottom; each phase gates the next (d
 - [x] Implement DarGlobal project-index discovery (`/projects` page parsing).
 - [x] Implement DarGlobal project-detail-page parser covering all fields in `docs/03-DATA-SCRAPING-SPEC.md` §2.2–2.3.
 - [x] Implement DarGlobal press/newsroom scraper (`/press`, capped at `MAX_DARGLOBAL_PRESS`).
-- [ ] Implement DarGlobal about/company-info and brand-partner page scraping.
+- [x] Capture DarGlobal about/investor company information and normalize brand-partner fields from the public project pages.
 - [x] Run the DarGlobal scraper end-to-end locally; manually spot-check 5 records against the live site for accuracy.
 - [x] Confirm idempotency: re-run, confirm no duplicates, `updated_at` refreshes.
 - [x] Confirm graceful handling of at least one deliberately-broken case (temporarily point at a 404 URL, confirm log+skip, no crash).

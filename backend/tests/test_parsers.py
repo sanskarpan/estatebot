@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from scraper.darglobal.parsers import parse_project
-from scraper.darglobal.browser_capture import document_from_capture, listing_from_capture
+from scraper.darglobal.browser_capture import company_document_from_capture, document_from_capture, listing_from_capture
 from scraper.wasalt.parsers import parse_listing
 
 
@@ -78,3 +78,14 @@ def test_darglobal_browser_press_capture_normalizes_body_and_date():
     assert item.publish_date.isoformat() == "2026-08-06"
     assert item.body_text.startswith("06/08/2026 Dubai, UAE")
     assert "GET IN TOUCH" not in item.body_text
+
+
+def test_darglobal_company_capture_normalizes_body():
+    item = company_document_from_capture({
+        "source_url": "https://darglobal.co.uk/about",
+        "title": "DISCOVER DARGLOBAL",
+        "body_text": "GET IN TOUCH\nDISCOVER DARGLOBAL\nA global luxury real estate developer.",
+    }, "2026-09-02T13:00:00Z")
+    assert item.source_id == "about"
+    assert item.content_type == "company_info"
+    assert item.body_text == "A global luxury real estate developer."
