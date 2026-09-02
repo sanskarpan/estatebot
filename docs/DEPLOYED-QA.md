@@ -84,3 +84,11 @@ The 11-message live sample completed without timeouts or crashes. Grounded model
 - The product UI redesign was rechecked at desktop and 375×812 after release: the structured empty state, compact fixed composer, seven-option model menu, native About dialog, cited answer cards, copy action, transcript persistence, and responsive layout all passed. The mobile document and body widths measured exactly 375 px with no horizontal overflow.
 - A refresh-only attribution defect found during this pass was fixed: restored answers now rerender after the model catalogue loads, so friendly labels replace raw provider IDs.
 - Automated coverage increased to 60 passing tests, including catalogue allow-listing, selected-model-first ordering, fallback/deduplication, request propagation, actual-model reporting, degraded-answer formatting, and invalid-model rejection.
+
+## Conversational and scope regression addendum — 2026-09-03
+
+- The reported `hello` failure was reproduced and corrected. On the public UI, the user bubble measured 61×43 px and rendered “hello” on one line; EstateBot returned a useful conversational response without invoking a model or showing a source-verification label.
+- Unmatched geography now displays the literal “No matching source data” state. The misleading generic “Verified data response” label and irrelevant Copy action are absent.
+- “Which locations do you cover?” returned all 13 corpus cities and all 7 countries, including Dubai, London, Muscat, and the United Arab Emirates, while clearly stating that EstateBot is corpus-bound rather than a worldwide search engine.
+- The first-run screen now exposes the 13-city/7-country breadth and leads with a Dubai example instead of visually implying Riyadh-only coverage. The About dialog shows both city and country counts.
+- Automated coverage increased to 62 passing tests, including deterministic greeting routing, provider-call avoidance for greetings, location coverage, and the existing unsupported-developer guard.
