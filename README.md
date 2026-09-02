@@ -79,7 +79,7 @@ PYTHONPATH=. .venv/bin/python -m pytest -q
 make run-api
 ```
 
-The current suite contains **74 passing tests** covering the API, retrieval planner, context isolation, source balance, model routing, citation verification, UI contracts, persistence, ingestion, parsers, scraper safety, and seed integrity.
+The current suite contains **75 passing tests** covering the API, retrieval planner, context isolation, source balance, model routing, citation verification, UI contracts, persistence, ingestion, parsers, scraper safety, and seed integrity.
 
 ## Reviewer prompts
 

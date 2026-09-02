@@ -177,6 +177,17 @@ def test_source_typo_is_resolved_and_unknown_source_is_not_silently_ignored(db):
     assert "couldn't identify 'madeuphomes'" in (property_type_unknown.no_match_reason or "")
 
 
+def test_generic_cross_source_language_is_not_treated_as_an_unknown_provider(db):
+    villas = RetrievalService(db).retrieve("Show villas from both sources")
+    assert villas.plan.cross_source is True
+    assert villas.no_match_reason is None
+    assert villas.chunks
+
+    apartments = RetrievalService(db).retrieve("Compare apartments from all providers")
+    assert apartments.plan.cross_source is True
+    assert apartments.no_match_reason is None
+
+
 def test_number_without_price_language_does_not_activate_unfiltered_structured_results(db):
     result = RetrievalService(db).retrieve("asdf qwer 987")
     assert result.structured == []

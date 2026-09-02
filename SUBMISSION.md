@@ -43,7 +43,7 @@
 - **Grounding and balance:** deterministic conversation/coverage routes, structured SQL for explicit and numeric constraints, and FTS5/BM25 for lexical retrieval. Generic results alternate available DarGlobal and Wasalt candidates; all model citations are checked against the retrieved set.
 - **Result presentation:** property citations are enriched from the canonical database and rendered as responsive image/detail cards; document citations remain compact source links, and missing media falls back without breaking layout.
 - **Data refresh method:** manual: `docker compose run --rm scraper`, then `docker compose run --rm ingestion`, followed by an API restart.
-- **Verification:** 74 automated tests plus clean-container, browser, direct API, authenticated model, security-header, responsive-layout, adversarial, concurrency, long-conversation, and availability-workflow checks.
+- **Verification:** 75 automated tests plus clean-container, browser, direct API, authenticated model, security-header, responsive-layout, adversarial, concurrency, long-conversation, and availability-workflow checks.
 
 ## 5. Cost ledger (actuals)
 

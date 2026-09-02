@@ -19,7 +19,7 @@
 
 | Check | Result |
 |---|---|
-| `PYTHONPATH=. .venv/bin/python -m pytest -q` | 74 passed; one upstream Starlette/httpx deprecation warning |
+| `PYTHONPATH=. .venv/bin/python -m pytest -q` | 75 passed; one upstream Starlette/httpx deprecation warning |
 | `docker compose config --quiet` | Passed |
 | API image build | Passed (`estatebot-api:local`) |
 | Fresh-container `/api/health` | HTTP 200; 36 DarGlobal + 212 Wasalt records loaded from seed |
@@ -33,6 +33,7 @@
 | OpenRouter catalog check | All three configured IDs present with zero prompt/completion pricing; context windows 262,144 / 256,000 / 1,048,576 tokens |
 | GitHub Actions | Public `main` workflow passed all tests, exact seed-count assertions, Compose validation, container health, and a five-citation Wasalt-project chat smoke check |
 | UI redesign browser QA | Passed at 1280×720 and 375×812: empty state, compact composer, seven-option model menu, selection persistence, native About dialog, cited response state, and mobile overflow were inspected |
+| Professional visual-system QA | Passed at 1280×720 and 320×700: inline SVG icon system, property-workspace hero, live capability metrics, image fallbacks, dialog/menu geometry, focus states, toast clearance, and populated card layouts were inspected |
 | Adversarial product QA | Structured zero-match leakage, stale context inheritance, suffix-currency parsing, typo/unknown-source routing, prompt extraction, numeric gibberish, citation punctuation, native blank validation, and reset state corrected; 20-request concurrency and 51-turn browser stress passed |
 
 ## Verified public-release evidence

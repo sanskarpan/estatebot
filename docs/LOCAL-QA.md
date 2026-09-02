@@ -5,7 +5,7 @@
 
 ## Automated and container checks
 
-- `PYTHONPATH=. .venv/bin/python -m pytest -q`: 74 passed; one upstream Starlette/httpx deprecation warning.
+- `PYTHONPATH=. .venv/bin/python -m pytest -q`: 75 passed; one upstream Starlette/httpx deprecation warning.
 - `docker compose config --quiet`: passed.
 - `docker build -f backend/Dockerfile -t estatebot-api:local .`: passed.
 - Fresh `docker run` with an empty `/app/data` volume: `/api/health` returned 200 and bootstrapped 36 DarGlobal projects, 180 Wasalt sale/rent listings, 32 Wasalt projects, and 20 documents.
@@ -43,6 +43,7 @@
 | Citation links | Pass | Every emitted citation is created from the retrieved source URL, not model-supplied URLs. |
 | Scraper safety | Pass | Robots handling, WAF detection, bounded retries, cache, and circuit-breaker logic are unit-covered or live-observed. |
 | Desktop visual QA | Pass | Chrome rendered the responsive shell, native About dialog, live corpus stats, literal response states, and DG1 citation chip correctly. |
+| Professional UI polish | Pass | Desktop and 320×700 browser runs verified the modern workspace hierarchy, SVG-only controls/placeholders, corpus capability signals, elevated property cards, green focus system, model menu, About dialog, and non-overlapping toast. |
 | Mobile/accessibility QA | Pass | At a measured 375×812 CSS viewport: no horizontal overflow, 44–45px primary controls, five secure citation links, Enter submit, Shift+Enter newline, semantic main/region/button/textbox structure, WCAG-AA color ratios, and zero console errors. |
 | Adversarial/API concurrency | Pass | Twenty simultaneous mixed requests completed 20/20 without empty answers or SQLite lock failures; details in [`ADVERSARIAL-QA.md`](ADVERSARIAL-QA.md). |
 | Long-conversation browser stress | Pass | Fifty-one mobile turns trimmed to 100 visible messages, survived refresh, and reset cleanly without overflow. |

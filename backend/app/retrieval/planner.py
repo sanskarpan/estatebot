@@ -120,7 +120,10 @@ def plan_query(db: Database, query: str, history: list[str] | None = None) -> Qu
     fuzzy_wasalt = any(len(word) >= 5 and SequenceMatcher(None, word, "wasalt").ratio() >= 0.78 for word in words)
     mentions_darglobal = "darglobal" in effective_lower or "dar global" in effective_lower or fuzzy_darglobal
     mentions_wasalt = "wasalt" in effective_lower or fuzzy_wasalt
-    if mentions_darglobal and mentions_wasalt:
+    generic_cross_source = bool(
+        re.search(r"\b(?:both|all)\s+(?:sources?|providers?|sites?)\b", effective_lower)
+    )
+    if (mentions_darglobal and mentions_wasalt) or generic_cross_source:
         plan.cross_source = True
         plan.structured_intent = True
     elif mentions_darglobal:
@@ -175,14 +178,14 @@ def plan_query(db: Database, query: str, history: list[str] | None = None) -> Qu
                 plan.structured_intent = True
                 plan.notes.append(f"Location '{candidate}' is not covered by the active corpus.")
 
-    if not (mentions_darglobal or mentions_wasalt or plan.city or plan.country):
+    if not (mentions_darglobal or mentions_wasalt or plan.cross_source or plan.city or plan.country):
         unknown_source = re.search(r"\bfrom\s+([a-z][a-z0-9-]{2,30})\b", lower)
         if unknown_source and re.search(
             r"\b(?:projects?|properties|listings?|homes?|houses?|villas?|apartments?|flats?|plots?|land)\b",
             lower,
         ):
             candidate = unknown_source.group(1)
-            if candidate not in {"where", "which", "the", "your", "this", "that"}:
+            if candidate not in {"where", "which", "the", "your", "this", "that", "both", "all", "either"}:
                 plan.unsupported_entity_mentioned = candidate
                 plan.notes.append(
                     f"I couldn't identify '{candidate}' as DarGlobal, Wasalt, or a covered location. Please clarify the source or place."

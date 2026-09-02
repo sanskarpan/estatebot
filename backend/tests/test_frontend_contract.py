@@ -23,6 +23,9 @@ def test_static_frontend_keeps_resilience_and_accessibility_contracts():
     assert "Refresh restored message attribution" in javascript
     assert "No matching source data" in javascript
     assert "property-card" in javascript
+    assert "property-fallback-icon" in javascript
+    assert "hero-signals" in javascript
+    assert "iconMarkup('spark')" in javascript
     assert "image.addEventListener('error'" in javascript
     assert "Verified data response" not in javascript
     assert "state.conversationId = null" in javascript
@@ -33,3 +36,8 @@ def test_static_frontend_keeps_resilience_and_accessibility_contracts():
     assert "prefers-reduced-motion" in css
     assert "overflow-wrap: break-word" in css
     assert ".property-media" in css
+    assert ".hero-signals" in css
+    for glyph in ("✦", "×", "⌂", "↵", "↗"):
+        assert glyph not in html
+        assert glyph not in javascript
+        assert glyph not in css

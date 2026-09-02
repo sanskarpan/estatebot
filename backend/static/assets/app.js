@@ -108,6 +108,9 @@ function iconMarkup(name) {
     copy: '<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>',
     external: '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 5h5v5M10 14 19 5M19 13v6H5V5h6"/></svg>',
     check: '<svg class="model-check" aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>',
+    database: '<svg aria-hidden="true" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>',
+    estate: '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12M8 20v-5h8v5M8 10h.01M12 10h.01M16 10h.01"/></svg>',
+    spark: '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3Z"/><path d="m18.5 14 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></svg>',
   };
   return icons[name] || '';
 }
@@ -139,7 +142,7 @@ function renderMessage(message) {
 
   const avatar = document.createElement('div');
   avatar.className = 'avatar';
-  avatar.textContent = message.role === 'user' ? 'You' : 'EB';
+  if (message.role === 'assistant') avatar.innerHTML = iconMarkup('estate');
   avatar.setAttribute('aria-hidden', 'true');
 
   const content = document.createElement('div');
@@ -158,13 +161,13 @@ function renderMessage(message) {
       meta.textContent = state.selectedModel ? `Thinking with ${modelLabel(state.selectedModel)}…` : 'Checking the source data…';
     } else if (message.model_used) {
       const fallback = message.requested_model && message.requested_model !== message.model_used;
-      meta.textContent = `· ${modelLabel(message.model_used)}${fallback ? ' fallback' : ''}`;
+      meta.textContent = `${modelLabel(message.model_used)}${fallback ? ' fallback' : ''}`;
     } else if (message.grounded === false && !message.error) {
-      meta.textContent = '· No matching source data';
+      meta.textContent = 'No matching source data';
     } else if (message.citations?.length) {
-      meta.textContent = '· Source-grounded';
+      meta.textContent = 'Source-grounded';
     } else if (message.retrieval_mode === 'structured') {
-      meta.textContent = '· Corpus summary';
+      meta.textContent = 'Corpus summary';
     }
     if (meta.textContent) head.appendChild(meta);
     content.appendChild(head);
@@ -206,7 +209,7 @@ function renderMessage(message) {
     if (message.citations.some((citation) => citation.record_type)) sources.classList.add('has-property-cards');
     const label = document.createElement('span');
     label.className = 'sources-label';
-    label.textContent = `${message.citations.length} source${message.citations.length === 1 ? '' : 's'}`;
+    label.innerHTML = `${iconMarkup('database')}<span>${message.citations.length} source${message.citations.length === 1 ? '' : 's'}</span>`;
     sources.appendChild(label);
 
     message.citations.forEach((citation) => {
@@ -239,6 +242,10 @@ function renderMessage(message) {
         } else {
           media.classList.add('image-unavailable');
         }
+        const fallbackIcon = document.createElement('span');
+        fallbackIcon.className = 'property-fallback-icon';
+        fallbackIcon.innerHTML = iconMarkup('estate');
+        media.appendChild(fallbackIcon);
         const sourceBadge = document.createElement('span');
         sourceBadge.className = 'property-source';
         sourceBadge.textContent = sourceName;
@@ -312,9 +319,14 @@ function renderEmptyState() {
   chatLog.innerHTML = `
     <div class="empty-state">
       <span class="empty-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6.5 14.3 16 6l9.5 8.3v10.2a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2V14.3Z"/><path d="M12.5 26.5v-8h7v8M4 16l12-10.5L28 16"/></svg></span>
-      <p class="eyebrow">SOURCE-GROUNDED PROPERTY SEARCH</p>
-      <h1>Where would you like to explore?</h1>
-      <p>Ask naturally about cities, projects, prices, bedrooms, or comparisons across <strong>${count ? `${count} verified records` : 'DarGlobal and Wasalt'}</strong>${coverage}.</p>
+      <p class="eyebrow"><span></span> PROPERTY RESEARCH WORKSPACE</p>
+      <h1>Intelligence for your<br><em>next property move.</em></h1>
+      <p>Search, compare, and verify opportunities across <strong>${count ? `${count} active records` : 'DarGlobal and Wasalt'}</strong>${coverage}.</p>
+      <div class="hero-signals" aria-label="EstateBot capabilities">
+        <span>${iconMarkup('database')}<strong>${count || '248'}</strong><small>records indexed</small></span>
+        <span>${iconMarkup('estate')}<strong>2</strong><small>data sources</small></span>
+        <span>${iconMarkup('spark')}<strong>${state.models.length || 6}</strong><small>AI routes</small></span>
+      </div>
     </div>`;
 }
 
@@ -428,7 +440,8 @@ function createModelOption(model) {
 
   const icon = document.createElement('span');
   icon.className = 'model-option-icon';
-  icon.textContent = model.id ? model.label.slice(0, 1) : '✦';
+  if (model.id) icon.textContent = model.label.slice(0, 1);
+  else icon.innerHTML = iconMarkup('spark');
 
   const copy = document.createElement('span');
   copy.className = 'model-option-copy';

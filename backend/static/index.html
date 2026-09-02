@@ -22,7 +22,10 @@
       </a>
 
       <div class="topbar-actions">
-        <span id="corpus-status" class="corpus-status" aria-live="polite"><span class="status-dot"></span><span>Connecting</span></span>
+        <span id="corpus-status" class="corpus-status" aria-live="polite">
+          <svg class="corpus-icon" aria-hidden="true" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>
+          <span class="status-dot"></span><span>Connecting</span>
+        </span>
         <button id="new-chat" class="header-action" type="button" title="Start a new chat">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
           <span>New chat</span>
@@ -71,7 +74,7 @@
         <div class="composer-toolbar">
           <div class="composer-tools">
             <button id="model-trigger" class="model-trigger" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="model-menu">
-              <span class="model-spark" aria-hidden="true">✦</span>
+              <span class="model-spark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3Z"/><path d="m18.5 14 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></svg></span>
               <span id="model-current">Auto</span>
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></svg>
             </button>
@@ -80,7 +83,7 @@
 
           <div class="send-tools">
             <span id="char-count" class="char-count" aria-live="polite">0 / 2000</span>
-            <span class="keyboard-hint" aria-hidden="true">↵</span>
+            <span class="keyboard-hint" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 5v7a4 4 0 0 1-4 4H5M9 12l-4 4 4 4"/></svg></span>
             <button id="send" class="send-button" type="submit" aria-label="Send message">
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
             </button>
@@ -90,7 +93,7 @@
         <div id="model-menu" class="model-menu" role="menu" aria-labelledby="model-menu-title" hidden>
           <div class="model-menu-heading">
             <span><strong id="model-menu-title">Choose a model</strong><small>All options are free. Availability can vary.</small></span>
-            <button id="model-menu-close" class="icon-button" type="button" aria-label="Close model menu">×</button>
+            <button id="model-menu-close" class="icon-button" type="button" aria-label="Close model menu"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
           </div>
           <div id="model-options" class="model-options"></div>
         </div>
@@ -103,12 +106,12 @@
     <div class="dialog-heading">
       <span class="dialog-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6.5 14.3 16 6l9.5 8.3v10.2a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2V14.3Z"/><path d="M12.5 26.5v-8h7v8M4 16l12-10.5L28 16"/></svg></span>
       <span><p class="eyebrow">ABOUT ESTATEBOT</p><h2 id="about-title">Grounded property research</h2></span>
-      <button id="about-close" class="icon-button" type="button" aria-label="Close">×</button>
+      <button id="about-close" class="icon-button" type="button" aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
     </div>
     <p>EstateBot answers from public DarGlobal and Wasalt data collected for this assessment. It is independent and is not affiliated with or endorsed by either company.</p>
     <div id="stats" class="stats" aria-live="polite"><span>Loading corpus details…</span></div>
     <div class="about-callout"><strong>Know before you decide</strong><p>Prices and availability may have changed since the last capture. Use the citations to confirm important details directly with the source.</p></div>
-    <div class="dialog-footer"><span id="last-scrape">Last data capture not recorded.</span><p class="source-links"><a href="https://darglobal.co.uk" target="_blank" rel="noopener noreferrer">DarGlobal ↗</a><a href="https://wasalt.sa" target="_blank" rel="noopener noreferrer">Wasalt ↗</a></p></div>
+    <div class="dialog-footer"><span id="last-scrape">Last data capture not recorded.</span><p class="source-links"><a href="https://darglobal.co.uk" target="_blank" rel="noopener noreferrer">DarGlobal <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 5h5v5M10 14 19 5M19 13v6H5V5h6"/></svg></a><a href="https://wasalt.sa" target="_blank" rel="noopener noreferrer">Wasalt <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 5h5v5M10 14 19 5M19 13v6H5V5h6"/></svg></a></p></div>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

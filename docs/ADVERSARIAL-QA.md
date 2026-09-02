@@ -98,6 +98,6 @@ The released build was checked again over HTTPS and through a fresh in-app brows
 - New chat cleared the transcript, draft, transient state, and conversation context while retaining the intentional model preference;
 - the textarea had no native validation state, tooltip, or orange inner focus rectangle;
 - all cards and the composer remained within the mobile viewport with no document overflow;
-- CI passed the 74-test suite, Compose validation, clean image build, seeded boot, and container smoke checks for the released revisions.
+- CI passed the 75-test suite, Compose validation, clean image build, seeded boot, and container smoke checks for the released revisions.
 
 Physical/timed limitations remain separate: a native screen-reader session, a deliberately severed public TCP stream, and a complete host idle-window wake have not been claimed as observed tests.

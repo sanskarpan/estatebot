@@ -52,6 +52,9 @@ A single-page chat interface implemented in vanilla HTML, CSS, and JavaScript an
 - Response-state labels must be literal: show the serving model for model-backed output, “Source-grounded” only when citations exist, “Corpus summary” for deterministic corpus summaries, and “No matching source data” for honest gaps. Never display a generic “verified” label on an uncited or empty result.
 - Keep the composer compact before typing and fixed within reach without obscuring the latest message. The model choice belongs in its toolbar rather than in a separate settings form.
 - Use a restrained product hierarchy: compact identity/status header, one clear empty-state question, structured prompt cards, readable answer typography, and citations as secondary evidence cards.
+- Present the empty state as a property-research workspace, including compact live signals for indexed records, data sources, and available AI routes; these are functional orientation, not decorative vanity metrics.
+- Use one consistent inline-SVG icon language for controls, model routing, data status, source labels, property placeholders, and external links. Do not rely on emoji or font glyphs for interface icons.
+- Typography uses a modern system sans-serif stack with a dense editorial display treatment, restrained green emphasis, subtle data-grid depth, and accessible green focus rings.
 
 ## 6. Client-side resilience
 
