@@ -12,21 +12,29 @@ function restoredMessages() {
 const state = {
   conversationId: sessionStorage.getItem('estatebot.conversation_id') || null,
   messages: restoredMessages(),
-  busy: false,
-  rateTimer: null,
   selectedModel: sessionStorage.getItem('estatebot.model') || '',
   modelLabels: {},
+  models: [],
+  stats: null,
+  busy: false,
+  rateTimer: null,
+  toastTimer: null,
 };
 
 const $ = (id) => document.getElementById(id);
 const chatLog = $('chat-log');
+const suggestions = $('suggestions');
+const workspace = $('workspace');
 const composer = $('composer');
 const input = $('message');
 const send = $('send');
-const modelSelect = $('model-select');
+const modelTrigger = $('model-trigger');
+const modelMenu = $('model-menu');
+const modelOptions = $('model-options');
+const aboutDialog = $('about-dialog');
 
 function escapeHtml(value) {
-  return value.replace(/[&<>"']/g, (character) => ({
+  return String(value).replace(/[&<>"']/g, (character) => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
@@ -35,17 +43,46 @@ function escapeHtml(value) {
   })[character]);
 }
 
-function markdown(value) {
-  let text = escapeHtml(value);
-  text = text
+function inlineMarkdown(value) {
+  return value
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\n\n+/g, '</p><p>')
-    .replace(/\n[-*] /g, '</p><ul><li>')
-    .replace(/\n/g, '<br>')
-    .replace(/<\/li><br>/g, '</li>')
-    .replace(/(<li>.*?)(?=<br>|$)/g, '$1</li>');
-  return `<p>${text}</p>`;
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+function markdown(value) {
+  const lines = escapeHtml(value).split('\n');
+  const output = [];
+  let paragraph = [];
+  let list = [];
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    output.push(`<p>${inlineMarkdown(paragraph.join('<br>'))}</p>`);
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (!list.length) return;
+    output.push(`<ul>${list.map((item) => `<li>${inlineMarkdown(item)}</li>`).join('')}</ul>`);
+    list = [];
+  };
+
+  lines.forEach((line) => {
+    const item = line.match(/^\s*[-*]\s+(.+)$/);
+    if (item) {
+      flushParagraph();
+      list.push(item[1]);
+      return;
+    }
+    flushList();
+    if (!line.trim()) {
+      flushParagraph();
+      return;
+    }
+    paragraph.push(line);
+  });
+  flushList();
+  flushParagraph();
+  return output.join('') || '<p></p>';
 }
 
 function trimMessages() {
@@ -57,12 +94,43 @@ function trimMessages() {
 function save() {
   try {
     sessionStorage.setItem('estatebot.messages', JSON.stringify(state.messages));
-    if (state.conversationId) {
-      sessionStorage.setItem('estatebot.conversation_id', state.conversationId);
-    }
+    if (state.conversationId) sessionStorage.setItem('estatebot.conversation_id', state.conversationId);
+    else sessionStorage.removeItem('estatebot.conversation_id');
+    if (state.selectedModel) sessionStorage.setItem('estatebot.model', state.selectedModel);
+    else sessionStorage.removeItem('estatebot.model');
   } catch {
-    // Storage can be disabled or full; chat remains usable for this page view.
+    // Storage can be disabled or full; the active page remains functional.
   }
+}
+
+function iconMarkup(name) {
+  const icons = {
+    copy: '<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>',
+    external: '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 5h5v5M10 14 19 5M19 13v6H5V5h6"/></svg>',
+    check: '<svg class="model-check" aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>',
+  };
+  return icons[name] || '';
+}
+
+function showToast(text) {
+  const toast = $('toast');
+  toast.textContent = text;
+  toast.hidden = false;
+  if (state.toastTimer) clearTimeout(state.toastTimer);
+  state.toastTimer = setTimeout(() => { toast.hidden = true; }, 1800);
+}
+
+async function copyText(value) {
+  try {
+    await navigator.clipboard.writeText(value);
+    showToast('Answer copied');
+  } catch {
+    showToast('Copy unavailable');
+  }
+}
+
+function modelLabel(modelId) {
+  return state.modelLabels[modelId] || modelId || '';
 }
 
 function renderMessage(message) {
@@ -72,17 +140,52 @@ function renderMessage(message) {
   const avatar = document.createElement('div');
   avatar.className = 'avatar';
   avatar.textContent = message.role === 'user' ? 'You' : 'EB';
+  avatar.setAttribute('aria-hidden', 'true');
+
+  const content = document.createElement('div');
+  content.className = 'message-content';
+
+  if (message.role === 'assistant') {
+    const head = document.createElement('div');
+    head.className = 'message-head';
+    const name = document.createElement('strong');
+    name.textContent = 'EstateBot';
+    head.appendChild(name);
+
+    const meta = document.createElement('span');
+    meta.className = 'message-model';
+    if (message.typing) {
+      meta.textContent = state.selectedModel ? `Thinking with ${modelLabel(state.selectedModel)}…` : 'Checking the source data…';
+    } else if (message.model_used) {
+      const fallback = message.requested_model && message.requested_model !== message.model_used;
+      meta.textContent = `· ${modelLabel(message.model_used)}${fallback ? ' fallback' : ''}`;
+    } else if (!message.error) {
+      meta.textContent = '· Verified data response';
+    }
+    head.appendChild(meta);
+    content.appendChild(head);
+  }
 
   const bubble = document.createElement('div');
-  bubble.className = `bubble ${message.grounded === false ? 'not-found' : ''} ${message.error ? 'error-bubble' : ''}`;
-  bubble.innerHTML = markdown(message.content);
+  bubble.className = `bubble ${message.grounded === false ? 'not-found' : ''} ${message.error ? 'error-bubble' : ''} ${message.typing ? 'typing' : ''}`;
+  if (message.typing && !message.content) {
+    bubble.innerHTML = '<span class="typing-dots" aria-label="EstateBot is thinking"><i></i><i></i><i></i></span>';
+  } else {
+    bubble.innerHTML = markdown(message.content);
+    if (message.typing) {
+      const cursor = document.createElement('span');
+      cursor.className = 'streaming-cursor';
+      cursor.setAttribute('aria-hidden', 'true');
+      bubble.appendChild(cursor);
+    }
+  }
 
   if (message.retry) {
     const button = document.createElement('button');
-    button.className = 'button secondary retry-button';
+    button.className = 'retry-button';
     button.type = 'button';
     button.disabled = state.busy;
-    button.textContent = 'Retry';
+    button.textContent = 'Try again';
     button.addEventListener('click', () => {
       if (state.busy) return;
       state.messages = state.messages.filter((item) => item !== message);
@@ -91,13 +194,14 @@ function renderMessage(message) {
     });
     bubble.appendChild(button);
   }
+  content.appendChild(bubble);
 
   if (message.citations?.length) {
     const sources = document.createElement('div');
     sources.className = 'sources';
     const label = document.createElement('span');
     label.className = 'sources-label';
-    label.textContent = 'Sources';
+    label.textContent = `${message.citations.length} source${message.citations.length === 1 ? '' : 's'}`;
     sources.appendChild(label);
 
     message.citations.forEach((citation) => {
@@ -106,31 +210,66 @@ function renderMessage(message) {
       link.href = citation.source_url;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
-      link.textContent = `${citation.name || citation.source_id} ↗`;
+      link.setAttribute('aria-label', `Open source: ${citation.name || citation.source_id}`);
+
+      const site = document.createElement('span');
+      site.className = 'citation-site';
+      site.textContent = citation.source_site === 'darglobal' ? 'DG' : 'W';
+      const copy = document.createElement('span');
+      copy.className = 'citation-copy';
+      const title = document.createElement('strong');
+      title.textContent = citation.name || citation.source_id;
+      const source = document.createElement('small');
+      source.textContent = citation.source_site === 'darglobal' ? 'DarGlobal' : 'Wasalt';
+      copy.append(title, source);
+      link.append(site, copy);
+      link.insertAdjacentHTML('beforeend', iconMarkup('external'));
       sources.appendChild(link);
     });
-    bubble.appendChild(sources);
+    content.appendChild(sources);
   }
 
-  if (message.role === 'assistant' && message.model_used) {
-    const model = document.createElement('div');
-    model.className = 'model-used';
-    model.textContent = `Answered with ${state.modelLabels[message.model_used] || message.model_used}`;
-    bubble.appendChild(model);
+  if (message.role === 'assistant' && !message.typing && !message.error) {
+    const actions = document.createElement('div');
+    actions.className = 'message-actions';
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'message-action';
+    copy.innerHTML = `${iconMarkup('copy')}<span>Copy</span>`;
+    copy.addEventListener('click', () => copyText(message.content));
+    actions.appendChild(copy);
+    content.appendChild(actions);
   }
 
-  row.append(avatar, bubble);
+  row.append(avatar, content);
   chatLog.appendChild(row);
 }
 
+function renderEmptyState() {
+  const count = state.stats?.listings_total;
+  chatLog.innerHTML = `
+    <div class="empty-state">
+      <span class="empty-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6.5 14.3 16 6l9.5 8.3v10.2a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2V14.3Z"/><path d="M12.5 26.5v-8h7v8M4 16l12-10.5L28 16"/></svg></span>
+      <p class="eyebrow">SOURCE-GROUNDED PROPERTY SEARCH</p>
+      <h1>Where would you like to explore?</h1>
+      <p>Ask naturally about cities, projects, prices, bedrooms, or comparisons across <strong>${count ? `${count} verified records` : 'DarGlobal and Wasalt'}</strong>.</p>
+    </div>`;
+}
+
 function render() {
-  chatLog.innerHTML = '';
-  if (!state.messages.length) {
-    chatLog.innerHTML = '<div class="welcome"><strong>What would you like to explore?</strong><br>Ask about properties, projects, locations, prices, or bedrooms from the available DarGlobal and Wasalt data.</div>';
+  chatLog.replaceChildren();
+  const isEmpty = state.messages.length === 0;
+  workspace.classList.toggle('is-empty', isEmpty);
+  suggestions.hidden = !isEmpty;
+  if (isEmpty) renderEmptyState();
+  else state.messages.forEach(renderMessage);
+  if (isEmpty) {
+    workspace.scrollTop = 0;
     return;
   }
-  state.messages.forEach(renderMessage);
-  chatLog.scrollTop = chatLog.scrollHeight;
+  requestAnimationFrame(() => {
+    workspace.scrollTop = workspace.scrollHeight;
+  });
 }
 
 function addMessage(message) {
@@ -140,15 +279,19 @@ function addMessage(message) {
   render();
 }
 
+function updateSendState() {
+  send.disabled = state.busy || !input.value.trim();
+}
+
 function setBusy(value) {
   state.busy = value;
   input.disabled = value;
-  send.disabled = value;
-  modelSelect.disabled = value;
-  send.textContent = value ? 'Working…' : 'Send';
-  document.querySelectorAll('.retry-button').forEach((button) => {
+  modelTrigger.disabled = value;
+  $('new-chat').disabled = value;
+  document.querySelectorAll('.model-option, .retry-button, .suggestions button').forEach((button) => {
     button.disabled = value;
   });
+  updateSendState();
 }
 
 function banner(text, error = false) {
@@ -171,42 +314,107 @@ function addStat(container, value, label) {
 
 async function loadStats() {
   const controller = new AbortController();
-  const wakeTimer = setTimeout(() => {
-    banner('Waking up the server… this can take up to about 30 seconds on the free tier.');
-  }, 1500);
+  const wakeTimer = setTimeout(() => banner('EstateBot is waking up. This can take a few moments.'), 1500);
   const timeout = setTimeout(() => controller.abort(), 30000);
+  const status = $('corpus-status');
 
   try {
     const [statsResponse, healthResponse] = await Promise.all([
       fetch('/api/stats', { signal: controller.signal }),
       fetch('/api/health', { signal: controller.signal }),
     ]);
-    if (!statsResponse.ok) throw new Error('stats unavailable');
+    if (!statsResponse.ok || !healthResponse.ok) throw new Error('service unavailable');
 
     const stats = await statsResponse.json();
     const health = await healthResponse.json();
+    state.stats = stats;
+
+    status.className = 'corpus-status ready';
+    status.lastElementChild.textContent = `${stats.listings_total || 0} source records`;
+
     const container = $('stats');
     container.replaceChildren();
-    addStat(container, stats.listings_total ?? 0, 'active listings');
-    addStat(container, stats.content_documents_total ?? 0, 'content documents');
+    addStat(container, stats.listings_total ?? 0, 'properties & projects');
+    addStat(container, stats.content_documents_total ?? 0, 'supporting documents');
     addStat(container, (stats.cities_covered || []).length, 'cities covered');
-    addStat(container, health.model?.primary || 'data-only', 'configured model');
+    addStat(container, 2, 'public sources');
+    addStat(container, state.models.length || 6, 'free AI models');
+    addStat(container, health.retrieval_mode === 'bm25_only' ? 'Indexed' : 'Ready', 'search status');
 
-    const timestamp = document.createElement('p');
-    timestamp.textContent = `Last scrape: ${stats.last_scrape_completed_at ? new Date(stats.last_scrape_completed_at).toLocaleString() : 'not recorded yet'}.`;
-    container.appendChild(timestamp);
-    $('mode-label').textContent = health.retrieval_mode || 'data-only fallback';
+    $('last-scrape').textContent = `Last data capture: ${stats.last_scrape_completed_at ? new Date(stats.last_scrape_completed_at).toLocaleString() : 'not recorded'}.`;
     banner('');
-    if (!stats.listings_total) {
-      banner('The corpus is empty. Run the scraper and ingestion pipeline before asking questions.');
-    }
+    if (!stats.listings_total) banner('Property data is temporarily unavailable.', true);
+    if (!state.messages.length) render();
   } catch {
+    status.className = 'corpus-status error';
+    status.lastElementChild.textContent = 'Service unavailable';
     $('stats').textContent = 'Corpus details are temporarily unavailable.';
-    banner('The server is still waking up or temporarily unavailable. Please try again in a moment.', true);
+    banner('EstateBot is still starting or temporarily unavailable. Please try again shortly.', true);
   } finally {
     clearTimeout(wakeTimer);
     clearTimeout(timeout);
   }
+}
+
+function createModelOption(model) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'model-option';
+  button.setAttribute('role', 'menuitemradio');
+  button.dataset.model = model.id;
+  button.setAttribute('aria-checked', String(state.selectedModel === model.id));
+
+  const icon = document.createElement('span');
+  icon.className = 'model-option-icon';
+  icon.textContent = model.id ? model.label.slice(0, 1) : '✦';
+
+  const copy = document.createElement('span');
+  copy.className = 'model-option-copy';
+  const title = document.createElement('span');
+  title.className = 'model-option-title';
+  const strong = document.createElement('strong');
+  strong.textContent = model.label;
+  title.appendChild(strong);
+  if (model.free) {
+    const badge = document.createElement('span');
+    badge.className = 'free-badge';
+    badge.textContent = 'Free';
+    title.appendChild(badge);
+  }
+  const detail = document.createElement('small');
+  detail.textContent = model.description;
+  copy.append(title, detail);
+
+  button.append(icon, copy);
+  button.insertAdjacentHTML('beforeend', iconMarkup('check'));
+  button.addEventListener('click', () => selectModel(model.id));
+  return button;
+}
+
+function renderModelOptions() {
+  modelOptions.replaceChildren();
+  const automatic = {
+    id: '',
+    label: 'Auto',
+    provider: 'EstateBot',
+    description: 'Recommended free fallback for the best chance of an answer.',
+    free: false,
+  };
+  [automatic, ...state.models].forEach((model) => modelOptions.appendChild(createModelOption(model)));
+}
+
+function updateModelTrigger() {
+  $('model-current').textContent = state.selectedModel ? modelLabel(state.selectedModel) : 'Auto';
+  document.querySelectorAll('.model-option').forEach((button) => {
+    button.setAttribute('aria-checked', String(button.dataset.model === state.selectedModel));
+  });
+}
+
+function selectModel(modelId) {
+  state.selectedModel = modelId;
+  updateModelTrigger();
+  save();
+  closeModelMenu(true);
 }
 
 async function loadModels() {
@@ -214,23 +422,31 @@ async function loadModels() {
     const response = await fetch('/api/models');
     if (!response.ok) throw new Error('models unavailable');
     const payload = await response.json();
-    (payload.models || []).forEach((model) => {
-      state.modelLabels[model.id] = model.label;
-      const option = document.createElement('option');
-      option.value = model.id;
-      option.textContent = `${model.label} · Free`;
-      modelSelect.appendChild(option);
-    });
-    if ([...modelSelect.options].some((option) => option.value === state.selectedModel)) {
-      modelSelect.value = state.selectedModel;
-    } else {
-      state.selectedModel = '';
-      sessionStorage.removeItem('estatebot.model');
-    }
-    render();
+    state.models = payload.models || [];
+    state.models.forEach((model) => { state.modelLabels[model.id] = model.label; });
+    if (state.selectedModel && !state.models.some((model) => model.id === state.selectedModel)) state.selectedModel = '';
   } catch {
-    $('model-help').textContent = 'Automatic free-model fallback is active.';
+    state.models = [];
+    state.selectedModel = '';
   }
+  renderModelOptions();
+  updateModelTrigger();
+  save();
+  if (!state.messages.length) render();
+}
+
+function openModelMenu() {
+  if (state.busy) return;
+  modelMenu.hidden = false;
+  modelTrigger.setAttribute('aria-expanded', 'true');
+  const selected = modelOptions.querySelector('[aria-checked="true"]') || modelOptions.querySelector('button');
+  selected?.focus();
+}
+
+function closeModelMenu(returnFocus = false) {
+  modelMenu.hidden = true;
+  modelTrigger.setAttribute('aria-expanded', 'false');
+  if (returnFocus) modelTrigger.focus();
 }
 
 function parseSseChunk(buffer, onEvent) {
@@ -243,7 +459,7 @@ function parseSseChunk(buffer, onEvent) {
     try {
       onEvent(event, JSON.parse(data));
     } catch {
-      // An invalid frame cannot be treated as verified output.
+      // Invalid frames cannot be treated as verified output.
     }
   });
   return tail;
@@ -263,20 +479,20 @@ function startRateLimitCountdown(seconds) {
       setBusy(false);
       return;
     }
-    banner(`Rate limit reached. You can send another question in ${remaining} second${remaining === 1 ? '' : 's'}.`, true);
-    send.textContent = `Wait ${remaining}s`;
+    banner(`Free-model limit reached. Try again in ${remaining} second${remaining === 1 ? '' : 's'}.`, true);
   };
-
   update();
   state.rateTimer = setInterval(update, 250);
 }
 
 async function sendMessage(text) {
   if (state.busy) return;
+  const requestedModel = state.selectedModel;
+  closeModelMenu();
   setBusy(true);
   banner('');
   addMessage({ role: 'user', content: text });
-  const typing = { role: 'assistant', content: 'Thinking…', typing: true };
+  const typing = { role: 'assistant', content: '', typing: true, requested_model: requestedModel };
   state.messages.push(typing);
   trimMessages();
   render();
@@ -289,14 +505,14 @@ async function sendMessage(text) {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-      body: JSON.stringify({ message: text, conversation_id: state.conversationId, model: state.selectedModel || null }),
+      body: JSON.stringify({ message: text, conversation_id: state.conversationId, model: requestedModel || null }),
       signal: controller.signal,
     });
 
     if (response.status === 429) {
       const error = await response.json();
       retryAfter = Math.max(1, Number(error.retry_after_seconds || response.headers.get('Retry-After')) || 60);
-      throw new Error(`Rate limited. Please wait ${retryAfter} seconds.`);
+      throw new Error(`The free-model request limit has been reached.`);
     }
     if (!response.ok) throw new Error('EstateBot could not complete that request.');
 
@@ -311,7 +527,7 @@ async function sendMessage(text) {
       let paintPending = false;
 
       const paint = () => {
-        typing.content = answer || 'Thinking…';
+        typing.content = answer;
         if (paintPending) return;
         paintPending = true;
         requestAnimationFrame(() => {
@@ -335,9 +551,7 @@ async function sendMessage(text) {
       }
       buffer += decoder.decode();
       if (buffer.trim()) parseSseChunk(`${buffer}\n\n`, handleEvent);
-      if (!final) {
-        throw new Error('The response stream was interrupted before verification completed. Please try again.');
-      }
+      if (!final) throw new Error('The response was interrupted before verification finished. Please try again.');
       final.answer = answer || final.answer;
     } else {
       final = await response.json();
@@ -351,12 +565,13 @@ async function sendMessage(text) {
       citations: final.citations || [],
       grounded: final.grounded,
       model_used: final.model_used,
+      requested_model: requestedModel,
     });
   } catch (error) {
     state.messages = state.messages.filter((message) => !message.typing);
     addMessage({
       role: 'assistant',
-      content: error.name === 'AbortError' ? 'The request timed out. Please try again.' : error.message || 'Something went wrong. Please try again.',
+      content: error.name === 'AbortError' ? 'The request took too long. Please try again.' : error.message || 'Something went wrong. Please try again.',
       retry: text,
       error: true,
       grounded: false,
@@ -366,7 +581,17 @@ async function sendMessage(text) {
     if (retryAfter) startRateLimitCountdown(retryAfter);
     else setBusy(false);
     save();
+    input.focus();
   }
+}
+
+function resizeInput() {
+  input.style.height = 'auto';
+  input.style.height = `${Math.min(160, Math.max(48, input.scrollHeight))}px`;
+  const count = input.value.length;
+  $('char-count').textContent = `${count} / 2000`;
+  $('char-count').classList.toggle('visible', count >= 1600);
+  updateSendState();
 }
 
 composer.addEventListener('submit', (event) => {
@@ -374,14 +599,11 @@ composer.addEventListener('submit', (event) => {
   const text = input.value.trim();
   if (!text || state.busy) return;
   input.value = '';
-  $('char-count').textContent = '0 / 2000';
+  resizeInput();
   sendMessage(text);
 });
 
-input.addEventListener('input', () => {
-  $('char-count').textContent = `${input.value.length} / 2000`;
-});
-
+input.addEventListener('input', resizeInput);
 input.addEventListener('keydown', (event) => {
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault();
@@ -389,39 +611,59 @@ input.addEventListener('keydown', (event) => {
   }
 });
 
-modelSelect.addEventListener('change', () => {
-  state.selectedModel = modelSelect.value;
-  if (state.selectedModel) sessionStorage.setItem('estatebot.model', state.selectedModel);
-  else sessionStorage.removeItem('estatebot.model');
-});
-
-document.querySelectorAll('.suggestions button').forEach((button) => {
+suggestions.querySelectorAll('button').forEach((button) => {
   button.addEventListener('click', () => {
-    input.value = button.textContent;
-    input.focus();
+    input.value = button.dataset.prompt;
+    resizeInput();
     composer.requestSubmit();
   });
 });
 
-const closeAbout = () => {
-  const trigger = $('about-button');
-  trigger.focus();
-  $('about-panel').hidden = true;
-  trigger.setAttribute('aria-expanded', 'false');
-};
-
-$('about-button').addEventListener('click', () => {
-  if (!$('about-panel').hidden) {
-    closeAbout();
-    return;
-  }
-  $('about-panel').hidden = false;
-  $('about-button').setAttribute('aria-expanded', 'true');
+modelTrigger.addEventListener('click', () => {
+  if (modelMenu.hidden) openModelMenu();
+  else closeModelMenu(true);
 });
-$('about-close').addEventListener('click', closeAbout);
+$('model-menu-close').addEventListener('click', () => closeModelMenu(true));
+modelOptions.addEventListener('keydown', (event) => {
+  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+  event.preventDefault();
+  const options = [...modelOptions.querySelectorAll('.model-option:not(:disabled)')];
+  const current = options.indexOf(document.activeElement);
+  let next = current;
+  if (event.key === 'ArrowDown') next = (current + 1) % options.length;
+  if (event.key === 'ArrowUp') next = (current - 1 + options.length) % options.length;
+  if (event.key === 'Home') next = 0;
+  if (event.key === 'End') next = options.length - 1;
+  options[next]?.focus();
+});
+document.addEventListener('click', (event) => {
+  if (!modelMenu.hidden && !modelMenu.contains(event.target) && !modelTrigger.contains(event.target)) closeModelMenu();
+});
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !$('about-panel').hidden) closeAbout();
+  if (event.key === 'Escape' && !modelMenu.hidden) {
+    event.preventDefault();
+    closeModelMenu(true);
+  }
+});
+
+$('new-chat').addEventListener('click', () => {
+  if (state.busy) return;
+  state.messages = [];
+  state.conversationId = null;
+  save();
+  render();
+  input.focus();
+  showToast('New chat started');
+});
+
+$('about-button').addEventListener('click', () => aboutDialog.showModal());
+$('about-close').addEventListener('click', () => aboutDialog.close());
+aboutDialog.addEventListener('click', (event) => {
+  if (event.target === aboutDialog) aboutDialog.close();
 });
 
 render();
-Promise.allSettled([loadStats(), loadModels()]);
+renderModelOptions();
+updateModelTrigger();
+resizeInput();
+Promise.allSettled([loadModels(), loadStats()]);

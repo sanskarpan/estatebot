@@ -2,57 +2,116 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="description" content="EstateBot answers questions about DarGlobal and Wasalt property data." />
-  <meta name="theme-color" content="#126b64" />
-  <title>EstateBot — DarGlobal × Wasalt</title>
+  <meta name="theme-color" content="#f7f7f4" />
+  <title>EstateBot — Property intelligence</title>
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/assets/style.css" />
 </head>
 <body>
   <noscript><div class="noscript">EstateBot needs JavaScript enabled to run its chat interface.</div></noscript>
-  <main class="shell">
-    <header class="header">
-      <div>
-        <p class="eyebrow">DARGLOBAL × WASALT</p>
-        <h1>EstateBot</h1>
-        <p class="subtitle">Ask about properties and projects in the scraped corpus.</p>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="EstateBot home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M6.5 14.3 16 6l9.5 8.3v10.2a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2V14.3Z"/><path d="M12.5 26.5v-8h7v8M4 16l12-10.5L28 16"/></svg>
+        </span>
+        <span class="brand-copy"><strong>EstateBot</strong><small>Property intelligence</small></span>
+      </a>
+
+      <div class="topbar-actions">
+        <span id="corpus-status" class="corpus-status" aria-live="polite"><span class="status-dot"></span><span>Connecting</span></span>
+        <button id="new-chat" class="header-action" type="button" title="Start a new chat">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+          <span>New chat</span>
+        </button>
+        <button id="about-button" class="header-action" type="button" title="About this data" aria-haspopup="dialog" aria-controls="about-dialog">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+          <span>About</span>
+        </button>
       </div>
-      <button id="about-button" class="button secondary" type="button" aria-controls="about-panel" aria-expanded="false">About this data</button>
     </header>
 
     <section id="status-banner" class="status-banner" aria-live="polite" hidden></section>
 
-    <section id="about-panel" class="about-panel" hidden aria-labelledby="about-title">
-      <div class="panel-heading"><h2 id="about-title">About this data</h2><button id="about-close" class="icon-button" type="button" aria-label="Close">×</button></div>
-      <p>EstateBot answers using data scraped from the public DarGlobal and Wasalt websites. It is an independent project and is not affiliated with or endorsed by either company.</p>
-      <div id="stats" class="stats" aria-live="polite"><span>Loading corpus details…</span></div>
-      <p class="disclaimer">Prices and availability may be out of date. Verify important details directly at the cited source before making decisions.</p>
-      <p class="source-links"><a href="https://darglobal.co.uk" target="_blank" rel="noopener noreferrer">DarGlobal</a><a href="https://wasalt.sa" target="_blank" rel="noopener noreferrer">Wasalt</a></p>
-    </section>
+    <main id="workspace" class="workspace">
+      <section id="chat-log" class="chat-log" aria-label="Conversation" aria-live="polite" role="log"></section>
 
-    <section id="chat-log" class="chat-log" aria-label="Conversation" aria-live="polite"></section>
-    <section id="suggestions" class="suggestions" aria-label="Suggested questions">
-      <button type="button">What properties are available in Riyadh?</button>
-      <button type="button">What is the cheapest property in Jeddah?</button>
-      <button type="button">Show 2-bedroom rentals in Riyadh.</button>
-      <button type="button">What properties are available in Dammam?</button>
-    </section>
+      <section id="suggestions" class="suggestions" aria-label="Suggested questions">
+        <button type="button" data-prompt="What properties are available in Riyadh?">
+          <span class="suggestion-icon location" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+          <span><small>Explore a market</small><strong>Properties in Riyadh</strong></span>
+          <svg class="suggestion-arrow" aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <button type="button" data-prompt="What is the cheapest property in Jeddah?">
+          <span class="suggestion-icon price" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M17 7.5c0-2-2-3-5-3s-5 1.2-5 3 1.7 2.7 5 3.5 5 1.7 5 4-2 4-5 4-5-1-5-3"/></svg></span>
+          <span><small>Compare prices</small><strong>Best value in Jeddah</strong></span>
+          <svg class="suggestion-arrow" aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <button type="button" data-prompt="Show 2-bedroom rentals in Riyadh.">
+          <span class="suggestion-icon home" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v9H3Z"/><path d="M9 20v-6h6v6"/></svg></span>
+          <span><small>Find a rental</small><strong>2-bedroom homes</strong></span>
+          <svg class="suggestion-arrow" aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <button type="button" data-prompt="Compare DarGlobal's Astera project with Wasalt villas in Riyadh.">
+          <span class="suggestion-icon compare" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3v18M17 3v18M3 7h8M13 17h8"/><path d="m8 4 3 3-3 3M16 14l-3 3 3 3"/></svg></span>
+          <span><small>Compare sources</small><strong>Astera vs Riyadh villas</strong></span>
+          <svg class="suggestion-arrow" aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </section>
+    </main>
 
-    <form id="composer" class="composer">
-      <div class="model-picker">
-        <label for="model-select">AI model</label>
-        <select id="model-select" aria-describedby="model-help">
-          <option value="">Auto — recommended free fallback</option>
-        </select>
-        <span id="model-help">Your choice is tried first; EstateBot falls back safely if it is busy.</span>
-      </div>
-      <label class="sr-only" for="message">Your question</label>
-      <textarea id="message" rows="2" maxlength="2000" placeholder="Ask about a city, project, property type, price, or bedrooms…" required></textarea>
-      <div class="composer-footer"><span id="char-count">0 / 2000</span><button id="send" class="button primary" type="submit">Send</button></div>
-    </form>
-    <p class="footer-note">Grounded answers only · Free models can be busy · <span id="mode-label">Data-only fallback ready</span></p>
-  </main>
+    <div class="composer-dock">
+      <form id="composer" class="composer">
+        <label class="sr-only" for="message">Ask EstateBot</label>
+        <textarea id="message" rows="1" maxlength="2000" placeholder="Ask about a property, city, price, or project…" required></textarea>
+
+        <div class="composer-toolbar">
+          <div class="composer-tools">
+            <button id="model-trigger" class="model-trigger" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="model-menu">
+              <span class="model-spark" aria-hidden="true">✦</span>
+              <span id="model-current">Auto</span>
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></svg>
+            </button>
+            <span class="grounded-label"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"/><circle cx="12" cy="12" r="9"/></svg>Source-grounded</span>
+          </div>
+
+          <div class="send-tools">
+            <span id="char-count" class="char-count" aria-live="polite">0 / 2000</span>
+            <span class="keyboard-hint" aria-hidden="true">↵</span>
+            <button id="send" class="send-button" type="submit" aria-label="Send message">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="model-menu" class="model-menu" role="menu" aria-labelledby="model-menu-title" hidden>
+          <div class="model-menu-heading">
+            <span><strong id="model-menu-title">Choose a model</strong><small>All options are free. Availability can vary.</small></span>
+            <button id="model-menu-close" class="icon-button" type="button" aria-label="Close model menu">×</button>
+          </div>
+          <div id="model-options" class="model-options"></div>
+        </div>
+      </form>
+      <p class="product-note">EstateBot can make mistakes. Verify important details at the cited source.</p>
+    </div>
+  </div>
+
+  <dialog id="about-dialog" class="about-dialog" aria-labelledby="about-title">
+    <div class="dialog-heading">
+      <span class="dialog-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6.5 14.3 16 6l9.5 8.3v10.2a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2V14.3Z"/><path d="M12.5 26.5v-8h7v8M4 16l12-10.5L28 16"/></svg></span>
+      <span><p class="eyebrow">ABOUT ESTATEBOT</p><h2 id="about-title">Grounded property research</h2></span>
+      <button id="about-close" class="icon-button" type="button" aria-label="Close">×</button>
+    </div>
+    <p>EstateBot answers from public DarGlobal and Wasalt data collected for this assessment. It is independent and is not affiliated with or endorsed by either company.</p>
+    <div id="stats" class="stats" aria-live="polite"><span>Loading corpus details…</span></div>
+    <div class="about-callout"><strong>Know before you decide</strong><p>Prices and availability may have changed since the last capture. Use the citations to confirm important details directly with the source.</p></div>
+    <div class="dialog-footer"><span id="last-scrape">Last data capture not recorded.</span><p class="source-links"><a href="https://darglobal.co.uk" target="_blank" rel="noopener noreferrer">DarGlobal ↗</a><a href="https://wasalt.sa" target="_blank" rel="noopener noreferrer">Wasalt ↗</a></p></div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script src="/assets/app.js" defer></script>
 </body>
 </html>

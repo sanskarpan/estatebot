@@ -13,7 +13,7 @@ A single-page chat interface. No auth, no routing complexity beyond the one scre
 5. **Suggested prompts** — on first load (empty conversation), show 4–6 clickable example questions drawn from `docs/01-SPEC.md` §4 use cases, tailored to the actual scraped corpus (don't suggest a question the corpus can't answer) — this materially improves first-impression review quality since the reviewer doesn't have to guess what to ask.
 6. **Typing/loading indicator** — shown between send and first token/full response.
 7. **Error state** — shown inline in the chat log as a distinct message style (not a silent failure or browser alert) when `/api/chat` errors or the client-side timeout (§6) fires; includes a retry action.
-8. **Free-model selector** — an accessible labelled `<select>` in the composer, populated from `/api/models`. “Auto” is the default; a chosen model is persisted for the browser session and tried first without disabling fallback.
+8. **Free-model selector** — an accessible custom menu integrated into the composer, populated from `/api/models`. It presents each model's plain-language purpose, free status, and selected state without exposing raw provider IDs. “Auto” is the default; a chosen model is persisted for the browser session and tried first without disabling fallback. The trigger/menu use the appropriate expanded, menu, and radio-item semantics and support arrow, Home, End, Enter, and Escape keyboard interaction.
 9. **Actual-model disclosure** — model-backed assistant messages display the provider-returned `model_used`, including when fallback served a different model than the user selected.
 8. **Rate-limit state** — when a `429` is received, show the countdown from `Retry-After` and disable the composer until it elapses.
 
@@ -36,7 +36,7 @@ A single-page chat interface. No auth, no routing complexity beyond the one scre
 
 - Plain-language explanation: "EstateBot answers using data scraped from the public DarGlobal and Wasalt websites. It is an independent project, not affiliated with or endorsed by either company."
 - Live stats pulled from `GET /api/stats`: total listings, sources, cities covered, last scrape timestamp (formatted human-readable, e.g. "Data last updated Aug 30, 2026").
-- The AI model currently in use (pulled from `GET /api/health` — transparency about which free model is answering).
+- The number of curated free models; the active preference remains continuously visible in the composer, and each model-backed answer discloses the actual model that served it.
 - A short disclaimer: prices/availability may be out of date; verify directly with the source before making decisions.
 - A link (or the two source domain names as plain text, not necessarily hyperlinked if that raises concerns about implying endorsement — hyperlinking to the public homepage is fine and standard attribution practice) to DarGlobal and Wasalt.
 
@@ -47,6 +47,8 @@ A single-page chat interface. No auth, no routing complexity beyond the one scre
 - `prefers-reduced-motion` respected (no forced animation on the typing indicator/token streaming if the user has this preference set).
 - No layout shift when citation chips or the "About" panel load.
 - Visually communicate "this is grounded/sourced," e.g. a small "Sources" label above citation chips, distinct from generic chat-bubble styling — this is a differentiator worth making visually obvious to a reviewer skimming quickly.
+- Keep the composer compact before typing and fixed within reach without obscuring the latest message. The model choice belongs in its toolbar rather than in a separate settings form.
+- Use a restrained product hierarchy: compact identity/status header, one clear empty-state question, structured prompt cards, readable answer typography, and citations as secondary evidence cards.
 
 ## 6. Client-side resilience
 

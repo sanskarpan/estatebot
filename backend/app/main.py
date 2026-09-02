@@ -33,13 +33,31 @@ generator = OpenRouterGenerator(settings)
 started_at = time.monotonic()
 rate_buckets: dict[str, deque[float]] = defaultdict(deque)
 
-MODEL_LABELS = {
-    "dots-studio/dots-3-note-preview:free": "Dots3 Note Preview",
-    "nvidia/nemotron-3-ultra-550b-a55b:free": "Nemotron 3 Ultra",
-    "nvidia/nemotron-3-super-120b-a12b:free": "Nemotron 3 Super",
-    "google/gemma-4-31b-it:free": "Gemma 4 31B",
-    "z-ai/glm-5.2:free": "GLM 5.2",
-    "minimax/minimax-m3:free": "MiniMax M3",
+MODEL_CATALOG = {
+    "dots-studio/dots-3-note-preview:free": {
+        "label": "Dots3 Note Preview", "provider": "Dots Studio",
+        "description": "Balanced long-context answers and document reasoning.",
+    },
+    "nvidia/nemotron-3-ultra-550b-a55b:free": {
+        "label": "Nemotron 3 Ultra", "provider": "NVIDIA",
+        "description": "Deep reasoning for detailed comparisons and research.",
+    },
+    "nvidia/nemotron-3-super-120b-a12b:free": {
+        "label": "Nemotron 3 Super", "provider": "NVIDIA",
+        "description": "Fast, capable reasoning for everyday property questions.",
+    },
+    "google/gemma-4-31b-it:free": {
+        "label": "Gemma 4 31B", "provider": "Google",
+        "description": "Reliable instruction following and concise summaries.",
+    },
+    "z-ai/glm-5.2:free": {
+        "label": "GLM 5.2", "provider": "Z.ai",
+        "description": "Strong context handling for follow-up conversations.",
+    },
+    "minimax/minimax-m3:free": {
+        "label": "MiniMax M3", "provider": "MiniMax",
+        "description": "Responsive general-purpose answers with long context.",
+    },
 }
 
 app = FastAPI(title="EstateBot API", version="1.0.0", description="Grounded DarGlobal and Wasalt property assistant")
@@ -184,7 +202,7 @@ def models():
     return {
         "default": settings.openrouter_model_primary,
         "models": [
-            {"id": model_id, "label": MODEL_LABELS.get(model_id, model_id), "free": True}
+            {"id": model_id, **MODEL_CATALOG.get(model_id, {"label": model_id, "provider": "OpenRouter", "description": "Free text model."}), "free": True}
             for model_id in settings.selectable_models
         ],
         "fallback_enabled": True,

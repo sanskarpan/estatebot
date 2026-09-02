@@ -115,3 +115,16 @@ def test_deterministic_document_answer_uses_content_disclaimer():
     assert "last capture" in answer
     assert "Prices and availability" not in answer
     assert citations[0].source_id == "about"
+
+
+def test_deterministic_listing_answer_summarizes_fields_without_raw_urls():
+    context = [RetrievedChunk(
+        "listing-1", "wasalt", "listing-1", "https://wasalt.sa/listing-1",
+        "A compact Jeddah apartment", "structured",
+        "A compact Jeddah apartment URL: https://wasalt.sa/listing-1 Location: Jeddah, Saudi Arabia. Category: apartment. Price: 1,700 /Year. Bedrooms: 1 Bedroom. Description: A very long scraped page.",
+        -1,
+    )]
+    answer, citations = deterministic_answer("Show me homes in Jeddah", context)
+    assert "Jeddah, Saudi Arabia · apartment · 1,700 /Year · 1 Bedroom" in answer
+    assert "https://" not in answer
+    assert citations[0].source_url == "https://wasalt.sa/listing-1"

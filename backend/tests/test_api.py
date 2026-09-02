@@ -142,8 +142,9 @@ def test_static_frontend_is_served(db, monkeypatch):
     response = client.get("/")
     assert response.status_code == 200
     assert "EstateBot" in response.text
-    assert 'id="model-select"' in response.text
-    assert "Auto — recommended free fallback" in response.text
+    assert 'id="model-trigger"' in response.text
+    assert 'id="model-menu"' in response.text
+    assert "Choose a model" in response.text
 
 
 def test_chat_sse_emits_verified_answer(db, monkeypatch):

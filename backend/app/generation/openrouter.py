@@ -88,6 +88,23 @@ def verify_and_extract(answer: str, context: list[RetrievedChunk]) -> tuple[str,
     return cleaned, citations, bool(markers) and not invalid
 
 
+def _listing_summary(text: str) -> str:
+    fields: list[str] = []
+    labels = ("Location", "Category", "Price", "Bedrooms")
+    for label in labels:
+        match = re.search(
+            rf"\b{label}:\s*(.+?)(?=\s+(?:Location|Category|Price|Bedrooms|Description):|$)",
+            text,
+            re.I,
+        )
+        if not match:
+            continue
+        value = " ".join(match.group(1).split()).strip(" .")
+        if value and value.lower() not in {"unknown", "not published", "not available"}:
+            fields.append(value)
+    return " · ".join(dict.fromkeys(fields))
+
+
 def deterministic_answer(question: str, context: list[RetrievedChunk], *, reason: str | None = None) -> tuple[str, list[Citation]]:
     if not context:
         text = reason or "I couldn't find anything about that in DarGlobal's or Wasalt's active scraped data. Try asking about a listed city, project, property type, or budget."
@@ -105,13 +122,18 @@ def deterministic_answer(question: str, context: list[RetrievedChunk], *, reason
     lines = ["I found these matching records in the scraped data:"]
     citations: list[Citation] = []
     seen: set[str] = set()
+    listing_chunk_types = {"structured", "overview", "location", "pricing", "units", "amenities"}
     for item in context[:5]:
         if item.source_id in seen:
             continue
-        lines.append(f"- **{item.name}** ({item.source_site}) — {item.text[:420]}")
+        if item.chunk_type in listing_chunk_types:
+            detail = _listing_summary(item.text)
+        else:
+            detail = " ".join(item.text.split())[:220].rstrip()
+        source_label = "DarGlobal" if item.source_site == "darglobal" else "Wasalt"
+        lines.append(f"- **{item.name}** — {detail or source_label}")
         citations.append(Citation(source_id=item.source_id, source_site=item.source_site, source_url=item.source_url, name=item.name))
         seen.add(item.source_id)
-    listing_chunk_types = {"structured", "overview", "location", "pricing", "units", "amenities"}
     if any(item.chunk_type in listing_chunk_types for item in context):
         lines.append("Prices and availability are only as current as the last scrape; verify details at the cited source.")
     else:
