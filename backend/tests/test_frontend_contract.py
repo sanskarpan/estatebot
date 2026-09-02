@@ -19,6 +19,7 @@ def test_static_frontend_keeps_resilience_and_accessibility_contracts():
     assert "response was interrupted before verification finished" in javascript
     assert "aboutDialog.showModal()" in javascript
     assert "modelTrigger.focus()" in javascript
+    assert "Refresh restored message attribution" in javascript
     assert ":focus-visible" in css
     assert "min-height: 48px" in css
     assert "prefers-reduced-motion" in css

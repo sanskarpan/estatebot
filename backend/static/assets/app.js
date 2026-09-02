@@ -432,7 +432,8 @@ async function loadModels() {
   renderModelOptions();
   updateModelTrigger();
   save();
-  if (!state.messages.length) render();
+  // Refresh restored message attribution after provider IDs gain friendly labels.
+  render();
 }
 
 function openModelMenu() {
