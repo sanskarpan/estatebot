@@ -111,6 +111,12 @@ Local full pipeline after the initial seeded boot: `docker compose run --rm scra
 
 The active service is configured with `OPENROUTER_API_KEY` in the host secret store and its assigned HTTPS URL in `OPENROUTER_HTTP_REFERER` and `CORS_ALLOWED_ORIGINS`. Reproductions should create a web service from the manifest and supply those secret/environment values without writing them to the repository.
 
+### 2.2 Best-effort availability ping
+
+`.github/workflows/availability-ping.yml` requests the public `/api/health` endpoint every 10 minutes and can also be run manually. The schedule starts at minute 7 rather than the top of the hour to reduce the chance of peak scheduler delay. The request uses a 90-second timeout, retries transient failures twice, validates the JSON health status, and leaves a visible failed workflow run when readiness cannot be confirmed.
+
+This reduces the likelihood of an idle cold start during the assessment window but is not an uptime guarantee. Scheduled GitHub Actions may run late or be dropped under load, public-repository schedules are disabled after 60 days without repository activity, the host can still restart or suspend a free instance, and continuously keeping one instance active consumes the workspace's monthly free-instance hours. A paid always-on instance is the reliable production solution.
+
 ## 3. Resource sizing
 
 - Target runtime RAM budget: fit comfortably within **512MB** (the common denominator across free tiers above) — this directly drives the embedding-model-vs-BM25 decision in `docs/05-CHATBOT-RAG-SPEC.md` §9: measure the actual resident memory of the chosen `sentence-transformers` model + FastAPI + Chroma at the target corpus size before committing; if it doesn't comfortably fit with headroom, switch to the BM25/SQLite-FTS5 fallback, which has a negligible memory footprint.

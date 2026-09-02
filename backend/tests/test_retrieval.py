@@ -113,6 +113,17 @@ def test_overview_wording_does_not_discard_explicit_filters(db):
     assert all(item["location_city"] == "Riyadh" for item in result.structured)
 
 
+def test_unspecified_source_results_include_darglobal_and_wasalt(db):
+    result = RetrievalService(db).retrieve("What apartments are available?")
+    assert {item.source_site for item in result.chunks} == {"darglobal", "wasalt"}
+
+
+def test_explicit_cross_source_query_balances_both_corpora(db):
+    result = RetrievalService(db).retrieve("Compare DarGlobal and Wasalt properties")
+    assert result.plan.cross_source is True
+    assert {item.source_site for item in result.chunks} == {"darglobal", "wasalt"}
+
+
 def test_equal_cheapest_prices_are_both_returned(db):
     db.upsert_listing(Listing(
         source_site="wasalt", source_id="jeddah-tie", source_url="https://wasalt.sa/en/property/jeddah-tie",

@@ -241,5 +241,23 @@ def structured_search(db: Database, plan: QueryPlan, limit: int = 5) -> list[dic
         clauses.append("price_amount IS NOT NULL")
     order = "price_amount ASC" if plan.order == "asc" else "price_amount DESC" if plan.order == "desc" else "updated_at DESC"
     with db.connect() as conn:
-        rows = conn.execute(f"SELECT * FROM listings WHERE {' AND '.join(clauses)} ORDER BY {order} LIMIT ?", [*params, limit]).fetchall()
+        if plan.source_site is None and plan.order is None:
+            by_source = {
+                source: conn.execute(
+                    f"SELECT * FROM listings WHERE {' AND '.join([*clauses, 'source_site=?'])} ORDER BY {order} LIMIT ?",
+                    [*params, source, limit],
+                ).fetchall()
+                for source in ("darglobal", "wasalt")
+            }
+            rows = []
+            for index in range(limit):
+                added = False
+                for source in ("darglobal", "wasalt"):
+                    if index < len(by_source[source]) and len(rows) < limit:
+                        rows.append(by_source[source][index])
+                        added = True
+                if not added or len(rows) >= limit:
+                    break
+        else:
+            rows = conn.execute(f"SELECT * FROM listings WHERE {' AND '.join(clauses)} ORDER BY {order} LIMIT ?", [*params, limit]).fetchall()
     return [row_to_listing(row) for row in rows]

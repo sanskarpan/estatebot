@@ -56,6 +56,17 @@ jobs:
           assert all(item["source_site"] == "wasalt" for item in payload["citations"])
           assert all("/project/Riyadh/" in item["source_url"] for item in payload["citations"])
           PY
+          curl --fail --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -d '{"message":"What villas are available?"}' \
+            http://127.0.0.1:8000/api/chat > balanced-chat.json
+          python - <<'PY'
+          import json
+          payload = json.load(open("balanced-chat.json", encoding="utf-8"))
+          sources = {item["source_site"] for item in payload["citations"]}
+          assert payload["grounded"] is True
+          assert sources == {"darglobal", "wasalt"}
+          PY
       - name: Show logs on failure
         if: failure()
         run: docker compose logs api

@@ -8,18 +8,18 @@
 - FastAPI service with `/api/chat`, `/api/health`, `/api/stats`, listing lookup, listing search, JSON responses, and buffered/verified SSE responses.
 - Responsive product-grade chat UI with a compact status header, visible 13-city/7-country breadth, structured first-run prompts, citation cards, literal response-state labels, native About dialog, local transcript persistence, streamed-answer feedback, copy/retry states, keyboard-friendly controls, and prompt-injection-safe rendering.
 - Pydantic validation and SQLite persistence with WAL mode, foreign keys, JSON fields, FTS5/BM25 chunks, conversation history, scrape-run metadata, composite `(source_site, source_id)` identity, and inactive-record handling (`404` unknown / `410` known inactive).
-- Deterministic conversational routing for greetings and coverage questions, plus query planning for named entities, cross-source comparisons, source, city, country, category, sale/rent, bedrooms, price bounds, currency, and cheapest/most-expensive ordering. Explicit constraints use structured SQL first and preserve SQL ordering.
+- Deterministic conversational routing for greetings and coverage questions, plus query planning for named entities, cross-source comparisons, source, city, country, category, sale/rent, bedrooms, price bounds, currency, and cheapest/most-expensive ordering. Unspecified-source result sets balance DarGlobal and Wasalt candidates; explicit source filters and global price ordering remain authoritative.
 - OpenRouter generation with a curated six-model free menu, plain-language model descriptions, selected-model-first routing, configurable fallback chain, bounded per-attempt/total timeouts, context truncation, citation-marker verification, strict regeneration, actual-model disclosure, and concise deterministic degraded answers when no key/provider is available.
 - Polite, cached, bounded scraper infrastructure with robots handling, descriptive user-agent, delay, retries, WAF/challenge detection, domain circuit breaking, raw snapshots, and safe deactivation only after complete discovery.
 - DarGlobal and Wasalt parser packages, source-specific normalization, sitemap fallback, auditable standard-browser DarGlobal project/press/company and Wasalt project capture imports, city-guide documents, index builder, seed export, fixtures, and automated tests.
 - Docker multi-stage API image, separate scraper image, Compose tool profiles, persistent data volume, health check, and offline seed bootstrap for a clean API volume.
-- GitHub Actions test/container-smoke workflow and a container-host configuration that deploys only after CI checks pass.
+- GitHub Actions test/container-smoke workflow, best-effort scheduled public health ping, and a container-host configuration that deploys only after CI checks pass.
 
 ## Verified local evidence
 
 | Check | Result |
 |---|---|
-| `PYTHONPATH=. .venv/bin/python -m pytest -q` | 62 passed; one upstream Starlette/httpx deprecation warning |
+| `PYTHONPATH=. .venv/bin/python -m pytest -q` | 64 passed; one upstream Starlette/httpx deprecation warning |
 | `docker compose config --quiet` | Passed |
 | API image build | Passed (`estatebot-api:local`) |
 | Fresh-container `/api/health` | HTTP 200; 36 DarGlobal + 212 Wasalt records loaded from seed |
