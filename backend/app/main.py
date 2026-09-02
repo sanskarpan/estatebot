@@ -60,7 +60,11 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 
 def _rate_limit(request: Request) -> tuple[bool, int]:
-    key = request.client.host if request.client else "unknown"
+    # Public deployments sit behind an edge proxy, so request.client is the
+    # proxy hop rather than the caller. Prefer the edge-provided client address
+    # and retain local/direct compatibility as a fallback.
+    forwarded_for = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
+    key = request.headers.get("cf-connecting-ip") or forwarded_for or (request.client.host if request.client else "unknown")
     now = time.monotonic()
     bucket = rate_buckets[key]
     while bucket and now - bucket[0] >= settings.chat_rate_limit_window_seconds:

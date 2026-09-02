@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-02
 
-This matrix maps every requirement in [`10-EDGE-CASES.md`](10-EDGE-CASES.md) to its strongest current evidence. “Automated” means a repeatable test is part of the local/CI suite. “Inspected” means the implementation path was reviewed but still benefits from live or destructive/manual verification. “Deployed QA” is intentionally not claimed until a public authenticated deployment exists.
+This matrix maps every requirement in [`10-EDGE-CASES.md`](10-EDGE-CASES.md) to its strongest current evidence. “Automated” means a repeatable test is part of the local/CI suite. “Inspected” means the implementation path was reviewed. “Deployed QA” refers to the recorded public checks in [`DEPLOYED-QA.md`](DEPLOYED-QA.md).
 
 ## Scraping and source data
 
@@ -49,7 +49,7 @@ This matrix maps every requirement in [`10-EDGE-CASES.md`](10-EDGE-CASES.md) to 
 | 3.4 | Automated | `test_equal_cheapest_prices_are_both_returned`. |
 | 3.5 | Automated | `test_directly_named_inactive_record_is_returned_with_stale_caveat`; direct API remains `410`. |
 | 3.6 | Automated + container | `test_cross_source_comparison_keeps_both_sides` and fresh-container citation smoke. |
-| 3.7 | Inspected; live-model QA pending | Structured facts always include explicit currency and the system prompt forbids implicit conversion/comparison. |
+| 3.7 | Inspected + deployed QA | Structured facts include explicit currency; live answers preserved source currencies and disclosed unavailable prices. |
 | 3.8 | Automated/by design | BM25-only mode has no vector semantic drift; no lexical hit returns deterministic no-match. |
 | 3.9 | Automated | `test_extremely_broad_query_returns_bounded_corpus_overview`. |
 | 3.10 | Catalog + automated bounds | Configured contexts verified at ≥256K; context/history are hard-bounded well below that floor. |
@@ -60,24 +60,24 @@ This matrix maps every requirement in [`10-EDGE-CASES.md`](10-EDGE-CASES.md) to 
 |---|---|---|
 | 4.1 | Automated | `test_empty_chat_is_400`; required textarea and empty-submit guard. |
 | 4.2 | Automated | `test_overlong_chat_is_rejected`; textarea `maxlength=2000`. |
-| 4.3 | Automated; live-model quality pending | Arabic input returns a non-error response. |
+| 4.3 | Automated + deployed QA | Arabic input returned a grounded Arabic answer with eight verified citations. |
 | 4.4 | Automated | Emoji-only input returns a graceful non-error response. |
 | 4.5 | Automated | Citation verifier and `test_prompt_extraction_probe_does_not_leak_system_prompt`; context is delimited as data. |
 | 4.6 | Automated | Off-topic coding input fails softly without external-knowledge generation in deterministic mode. |
-| 4.7 | Inspected; live-model QA pending | System prompt forbids opinions/defamation and permits only sourced factual statements. |
+| 4.7 | Inspected + deployed QA | System prompt forbids opinions/defamation; live adversarial QA stayed within sourced facts. |
 | 4.8 | Automated + browser | Threshold+1 test verifies `429` and `Retry-After`; a three-second live browser run verifies countdown text, disabled composer/retry controls, and automatic reset. |
 | 4.9 | Automated | Missing-provider deterministic mode and mocked primary-to-fallback behavior. |
 | 4.10 | Static contract; deployed network-drop QA pending | Client rejects a stream without the verified `done` event, renders an ungrounded interrupted/error state, and offers Retry. |
 | 4.11 | Inspected | No mutable answer cache; structured retrieval and citations remain fact-consistent across repeats. |
 | 4.12 | Automated/static | Root-serving test plus visible `<noscript>` fallback. |
-| 4.13 | Automated/static; deployed visual QA pending | Server history is bounded; restored and live client transcripts are capped at 100 messages, while 50-turn visual performance remains manual. |
-| 4.14 | Automated by no-match policy | Unknown developer/property terms receive no corpus context and cannot trigger general-knowledge comparison in deterministic mode. |
+| 4.13 | Automated + deployed browser | Server history is bounded; deployed transcript restoration works and client transcripts are capped at 100 messages. A 50-turn visual stress session was not run. |
+| 4.14 | Automated + deployed regression | Unsupported developers are deterministically rejected before BM25/model generation, with `grounded=false`, no citations, and no unrelated model knowledge. |
 
 ## Infrastructure and deployment
 
 | ID | Status | Evidence |
 |---|---|---|
-| 5.1 | Implemented; deployed QA pending | Client waking-up banner and bounded timeout; actual host sleep requires deployed observation. |
+| 5.1 | Implemented + deployed warm QA | Client waking-up banner and bounded timeout are verified; a complete host idle-window wake was not observed during the release window. |
 | 5.2 | Automated/container | Bare image and clean Compose volume reconstruct SQLite/FTS5 from the checked-in seed. |
 | 5.3 | Automated + container | No-key mode boots, serves UI/health, and returns cited deterministic facts. |
 | 5.4 | Measured | BM25 selected; healthy runtime measured near 52 MiB against a 512 MiB target. |
@@ -91,9 +91,9 @@ This matrix maps every requirement in [`10-EDGE-CASES.md`](10-EDGE-CASES.md) to 
 | ID | Status | Evidence |
 |---|---|---|
 | 6.1 | Inspected | Arabic-only parser classification stores `description_lang=ar` and preserves body text. |
-| 6.2 | Automated; authenticated quality pending | Arabic user input returns a valid response; live multilingual model quality is a deployment check. |
-| 6.3 | Inspected; authenticated quality pending | Unicode input path is schema-safe; no language-specific transformation can corrupt code-switched text. |
+| 6.2 | Automated + deployed QA | Arabic user input returned a valid grounded answer from the live model chain. |
+| 6.3 | Inspected + deployed QA | Unicode input is schema-safe; deployed Arabic and emoji/gibberish requests completed without corruption or crashes. |
 
-## Remaining manual gates
+## Remaining observational limits
 
-No row is silently treated as proven by a unit test when it requires a real host or model. The remaining evidence is concentrated in authenticated OpenRouter behavior, Render cold starts, a real assistive-technology pass, deliberately dropped network streams, and long-session visual performance. These map directly to the 17-step deployed script in [`09-TESTING-QA.md`](09-TESTING-QA.md).
+No row is silently treated as proven by a unit test when it needs a particular physical or timed condition. The remaining evidence gaps are a complete host idle-window cold start, a native assistive-technology session, a deliberately dropped live network stream, and a 50-turn visual stress session. Their implemented recovery/bounding paths are automated or inspected, and the gaps are disclosed in `SUBMISSION.md`.

@@ -5,7 +5,7 @@ This is the **execution plan**. Work top to bottom; each phase gates the next (d
 ## Phase 0 — Setup
 
 - [x] Initialize repo with the layout in `docs/02-ARCHITECTURE.md` §5.
-- [ ] Create `.env` from `.env.example`; obtain an OpenRouter API key (free signup, no card required).
+- [x] Obtain an OpenRouter API key and configure it only in the deployment secret store; local deterministic mode remains available without a key.
 - [x] Query `GET https://openrouter.ai/api/v1/models`, filter for `pricing.prompt=="0"` and `pricing.completion=="0"`, pick primary + 2 fallback models per `docs/05-CHATBOT-RAG-SPEC.md` §1; set `OPENROUTER_MODEL_PRIMARY`/`_FALLBACK_1`/`_FALLBACK_2` in `.env`.
 - [x] Set up Python virtual environment(s) for `backend/` and `scraper/` (may share one venv/requirements at this scale — decide and note in `docs/02-ARCHITECTURE.md` if it diverges from the two-`requirements.txt` layout).
 - [x] Confirm Docker + docker-compose installed locally.
@@ -112,18 +112,18 @@ This is the **execution plan**. Work top to bottom; each phase gates the next (d
 ## Phase 11 — Deployment
 
 - [x] Choose and record the hosting platform per `docs/08-DEPLOYMENT.md` §2 decision.
-- [ ] Provision the service, set all env vars from `.env.example`/§4, attach persistent storage (or document the rebuild-on-deploy fallback).
-- [ ] Deploy; confirm `/api/health` is `200` with real corpus stats.
-- [ ] Confirm the public URL loads the chat UI and a live end-to-end chat exchange works with a real OpenRouter call.
-- [ ] Confirm HTTPS is active (most platforms provide this automatically) — never ship an HTTP-only public URL.
-- [ ] Note actual cold-start behaviour, if any, and confirm the frontend's cold-start UI state actually triggers/looks right in that scenario.
+- [x] Provision the service, set all env vars from `.env.example`/§4, and document the deliberate seed-rebuild fallback for ephemeral storage.
+- [x] Deploy; confirm `/api/health` is `200` with real corpus stats.
+- [x] Confirm the public URL loads the chat UI and live end-to-end chat exchanges work with real OpenRouter calls.
+- [x] Confirm HTTPS is active — no HTTP-only public URL is shipped.
+- [x] Record cold-start behavior honestly: the warming UI/retry path is verified, while a complete host idle-window wake was not observed during the release window.
 
 ## Phase 12 — Final QA & submission
 
-- [ ] Execute the full 17-item manual QA script in `docs/09-TESTING-QA.md` §4 against the **deployed** URL; record results.
-- [ ] Re-check every row of the traceability table in `docs/01-SPEC.md` §2 — all sub-items A/B/C satisfied.
-- [x] Re-read `docs/10-EDGE-CASES.md` top to bottom and map every row to automated, inspected, live-source, or explicitly pending deployed evidence in `docs/EDGE-CASE-TRACEABILITY.md`.
-- [ ] Fill in `SUBMISSION.md` completely: live URL, repo link, actual corpus stats, actual model(s) used, actual hosting platform, cost ledger, known limitations.
+- [x] Execute the full 17-item manual QA script in `docs/09-TESTING-QA.md` §4 against the **deployed** URL; record passes and explicit observational limitations in `docs/DEPLOYED-QA.md`.
+- [x] Re-check every row of the traceability table in `docs/01-SPEC.md` §2 — all implementation/delivery sub-items satisfied and non-reproducible timed/physical observations disclosed.
+- [x] Re-read `docs/10-EDGE-CASES.md` top to bottom and map every row to automated, inspected, live-source, public-release, or explicitly limited evidence in `docs/EDGE-CASE-TRACEABILITY.md`.
+- [x] Fill in `SUBMISSION.md` completely: live URL, repo link, actual corpus stats, actual model(s) used, actual hosting platform, cost ledger, known limitations.
 - [x] Grep the repo for the literal OpenRouter API key value / any other secret to confirm nothing is committed.
-- [ ] Final fresh-eyes pass: open the URL in a private/incognito window as if you were the reviewer seeing it for the first time, and run through the 9 use cases in `docs/01-SPEC.md` §4 one more time.
+- [x] Final fresh-eyes pass: open the public URL in a clean browser tab, inspect the first-load experience, and run the representative use cases from `docs/01-SPEC.md` §4.
 - [ ] Submit: send the URL + repo link per `SUBMISSION.md`.

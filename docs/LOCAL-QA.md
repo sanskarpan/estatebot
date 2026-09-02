@@ -5,7 +5,7 @@
 
 ## Automated and container checks
 
-- `PYTHONPATH=. .venv/bin/python -m pytest -q`: 51 passed; one upstream Starlette/httpx deprecation warning.
+- `PYTHONPATH=. .venv/bin/python -m pytest -q`: 54 passed; one upstream Starlette/httpx deprecation warning.
 - `docker compose config --quiet`: passed.
 - `docker build -f backend/Dockerfile -t estatebot-api:local .`: passed.
 - Fresh `docker run` with an empty `/app/data` volume: `/api/health` returned 200 and bootstrapped 36 DarGlobal projects, 180 Wasalt sale/rent listings, 32 Wasalt projects, and 20 documents.
@@ -43,9 +43,9 @@
 | Desktop visual QA | Pass | Chrome rendered the responsive shell, About panel, live corpus stats, question/answer states, and DG1 citation chip correctly. |
 | Mobile/accessibility QA | Pass | At a measured 375×812 CSS viewport: no horizontal overflow, 44–45px primary controls, five secure citation links, Enter submit, Shift+Enter newline, semantic main/region/button/textbox structure, WCAG-AA color ratios, and zero console errors. |
 
-## Not yet executable locally
+## Public-only follow-up
 
-- Live OpenRouter quality, fallback latency, and model context behavior require an API key.
-- Deployed URL, HTTPS, host sleep/cold-start, deployed persistent-volume behavior, a real assistive-technology pass, and the full 17-item deployed QA script require a hosting target and public URL.
+- Live OpenRouter quality, fallback latency, HTTPS, and public-browser behavior are now covered in [`DEPLOYED-QA.md`](DEPLOYED-QA.md).
+- Host sleep/cold-start after a complete idle window, deliberately interrupted live networking, and a native assistive-technology session remain observational limitations.
 - The in-app browser could not load localhost in this environment (`ERR_BLOCKED_BY_CLIENT`), so browser automation was not treated as evidence of a UI failure; HTTP-level and static-file checks were used instead.
 - A LAN-address render succeeded in the in-app browser at both desktop and a verified 375×812 viewport. Native controls and the semantic accessibility tree were inspected; full sequential Tab traversal could not be reliably synthesized by this browser harness, so the eventual real screen-reader/keyboard pass remains part of deployed QA.

@@ -1,28 +1,26 @@
 # Submission
 
-> **Current state:** two-source local implementation verified; not yet a final submission. A public URL, deployment credentials, and a live OpenRouter key are not available in this workspace, so the release checklist below remains intentionally honest and incomplete.
-
-Fill this in completely before sending anything to the reviewer. Nothing here should be "TBD" at submission time — every field is something the reviewer can and likely will check.
+> **Current state:** release candidate verified locally and on its public HTTPS endpoint. Detailed results are recorded in [`docs/DEPLOYED-QA.md`](docs/DEPLOYED-QA.md).
 
 ## 1. Links
 
 | Item | Value |
 |---|---|
-| **Live URL** | Not deployed from this workspace |
+| **Live URL** | `https://estatebot-assessment.onrender.com` |
 | **Repository** | `https://github.com/sanskarpan/estatebot` (public) |
 | **Continuous integration** | `https://github.com/sanskarpan/estatebot/actions/workflows/ci.yml` (passing on `main`) |
-| **Hosting platform used** | None yet |
-| **API docs (Swagger)** | `http://localhost:8000/docs` when run locally |
+| **Hosting platform used** | Render free web service (Docker runtime, Singapore region) |
+| **API docs (Swagger)** | `https://estatebot-assessment.onrender.com/docs` |
 
 ## 2. Assignment requirement checklist (must all be checked)
 
 - [x] Publicly available data collected from DarGlobal — 36 public project pages, the 15 press releases exposed by the current public press index, and 2 company/investor pages were captured through a normal unauthenticated browser session and normalized through the audited capture importer
 - [x] Publicly available data collected from Wasalt — 180 active sale/rent listings, 32 public project pages, and 3 city-guide documents across the bounded listing cities plus the public project locations
-- [x] AI chatbot built using the collected data — automated local QA verifies grounded deterministic retrieval; deployed live-model QA remains outstanding
-- [ ] Free OpenRouter model in use — configured chain: `google/gemma-4-31b-it:free` → `z-ai/glm-5.2:free` → `minimax/minimax-m3:free`; no API key is configured in this workspace
+- [x] AI chatbot built using the collected data — automated, browser, and public live-model QA verify grounded retrieval and cited answers
+- [x] Free OpenRouter model in use — configured chain: `google/gemma-4-31b-it:free` → `z-ai/glm-5.2:free` → `minimax/minimax-m3:free`; authenticated public QA observed successful responses from the configured chain
 - [x] Containerised with Docker — Compose config and fresh seeded API-container smoke test verified locally
-- [ ] Deployed (not source-only) — live at the URL above
-- [ ] Working URL provided — reviewer can access and test directly, no setup required
+- [x] Deployed (not source-only) — live at the URL above
+- [x] Working URL provided — reviewer can access and test directly, no setup required
 
 ## 3. Corpus statistics (actuals, pulled from `/api/stats` at submission time)
 
@@ -40,18 +38,18 @@ Fill this in completely before sending anything to the reviewer. Nothing here sh
 
 - **Stack:** Python 3.12 / FastAPI / SQLite with WAL + FTS5 / BM25 / vanilla HTML-CSS-JavaScript frontend.
 - **Retrieval mode actually deployed:** `bm25_only`; selected for predictable low-memory Docker operation, with structured SQL filters for numeric and categorical facts.
-- **Model fallback chain configured:** `google/gemma-4-31b-it:free` → `z-ai/glm-5.2:free` → `minimax/minimax-m3:free` → deterministic degraded response. Live calls require `OPENROUTER_API_KEY`.
+- **Model fallback chain deployed:** `google/gemma-4-31b-it:free` → `z-ai/glm-5.2:free` → `minimax/minimax-m3:free` → deterministic degraded response. The key is held only in the host's secret store.
 - **Data refresh method:** manual: `docker compose run --rm scraper`, then `docker compose run --rm ingestion`, followed by an API restart.
 
 ## 5. Cost ledger (actuals)
 
 | Component | Provider | Actual cost |
 |---|---|---|
-| Hosting | Not deployed | — |
+| Hosting | Render free web service | $0 |
 | LLM | OpenRouter (free model) | $0 |
 | Embeddings | None; BM25/FTS5 selected | $0 |
 | Vector store | None; SQLite FTS5 index | $0 |
-| **Total monthly** | | |
+| **Total monthly** | | **$0** |
 
 ## 6. Known limitations (be honest — this is expected and reads better than silence)
 
@@ -60,9 +58,10 @@ List anything from `docs/10-EDGE-CASES.md` or `docs/09-TESTING-QA.md` that wasn'
 Current limitations:
 - DarGlobal's plain-HTTP path returned an Incapsula shell. Its 36 public project pages, 15 articles exposed by the current press index, and About/Investor Relations pages were therefore collected through a standard unauthenticated browser session; the audit capture is checked in. The index's visible “Load More” control did not expose additional entries in this capture session, so the corpus contains 15 rather than the 20–30 target maximum.
 - Wasalt scope is a bounded English sale/rent detail crawl for Dammam, Jeddah, and Riyadh, 32 records from the initial public Projects result set, and three city guides. Auctions are hosted on a separate surface and plans/unexposed result pages remain outside this bounded assessment snapshot.
-- The current local run has no OpenRouter key, so automated responses use deterministic cited facts. Live fallback-chain and model-quality QA still need a deployment secret.
-- No hosting account, public repository, or HTTPS URL has been provisioned from this workspace. A free-tier `render.yaml` Blueprint is ready; the seed rebuilds ephemeral SQLite state on restart.
-- All 17 manual deployed-URL QA items in `docs/09-TESTING-QA.md` remain to be executed after deployment; 51 automated tests pass locally, including validation of every checked-in seed record and the edge-case paths mapped in `docs/EDGE-CASE-TRACEABILITY.md`. A separate local browser pass already verifies the 375×812 layout, keyboard submission/newline handling, About disclosure, secure citations, and rate-limit countdown/reset.
+- The free host can sleep during inactivity, so the first request after an idle period can be slower. The UI includes a bounded “waking up” state and retry path; an actual full idle-window wake was not observed during the release window.
+- Free OpenRouter model availability and latency vary. The application uses three configured free models with per-attempt/total timeouts, then falls back to deterministic corpus facts instead of failing open or hallucinating.
+- The deployment uses ephemeral storage by design for this read-mostly assessment. It reconstructs SQLite and FTS5 from the checked-in seed at startup; conversation history is therefore not durable across a service restart.
+- A native screen-reader session and a deliberately interrupted live network stream were not run. Semantic landmarks, labels, native focusable controls, mobile sizing, secure links, and interrupted-stream handling are covered by browser/static inspection and automated tests.
 
 ## 7. How to run locally (for the reviewer, if they want to verify the source too)
 

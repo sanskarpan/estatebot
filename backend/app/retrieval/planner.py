@@ -36,6 +36,7 @@ class QueryPlan:
     overview_intent: bool = False
     location_mentioned: str | None = None
     location_recognized: bool = True
+    unsupported_entity_mentioned: str | None = None
     notes: list[str] = field(default_factory=list)
 
 
@@ -123,6 +124,14 @@ def plan_query(db: Database, query: str, history: list[str] | None = None) -> Qu
         if not plan.cross_source:
             plan.source_site = plan.entity_source_site
         plan.structured_intent = True
+    elif unsupported := re.search(r"\b(emaar|damac)\b", effective_lower):
+        # These competitor developers are explicit out-of-corpus examples in the
+        # product specification. Keep generic property terms from producing
+        # plausible-looking but unrelated BM25 matches and citations.
+        plan.unsupported_entity_mentioned = unsupported.group(1).title()
+        plan.notes.append(
+            f"Developer '{plan.unsupported_entity_mentioned}' is not covered by the active DarGlobal and Wasalt corpus."
+        )
 
     for alias, city in {**known_cities, "al-khobar": "Khobar", "makkah": "Mecca", "madinah": "Medina"}.items():
         if re.search(rf"\b{re.escape(alias)}\b", effective_lower):

@@ -2,7 +2,7 @@
 
 ## Implemented build decision
 
-The current implementation uses a single Python 3.12 FastAPI runtime image that serves the vanilla static frontend. It also contains the scraper and ingestion packages so the same build can run the Compose tool profiles. SQLite plus the FTS5/BM25 index lives under `/app/data`; a checked-in normalized two-source seed snapshot at `/app/seed_corpus.json` bootstraps a fresh API volume. Render free web service is the prepared deployment target through the root `render.yaml` Blueprint, but no account-bound deployment has been created yet. The exact local evidence and external release gates are in [`IMPLEMENTATION-STATUS.md`](IMPLEMENTATION-STATUS.md).
+The current implementation uses a single Python 3.12 FastAPI runtime image that serves the vanilla static frontend. It also contains the scraper and ingestion packages so the same build can run the Compose tool profiles. SQLite plus the FTS5/BM25 index lives under `/app/data`; a checked-in normalized two-source seed snapshot at `/app/seed_corpus.json` bootstraps a fresh API volume. The public release runs as a Render free web service from the root `render.yaml` configuration. Exact local and public evidence is in [`IMPLEMENTATION-STATUS.md`](IMPLEMENTATION-STATUS.md) and [`DEPLOYED-QA.md`](DEPLOYED-QA.md).
 
 ## 1. Containerisation requirements
 
@@ -103,13 +103,13 @@ Local full pipeline after the initial seeded boot: `docker compose run --rm scra
 | **Railway** | As of 2026, no longer offers a persistent free tier — usage-based billing after a short trial/credit. | Not recommended as the primary target given the "must run within free tiers" constraint in `docs/01-SPEC.md` §6, unless the builder has existing credits; acceptable only as a documented exception with cost noted. |
 | **Fly.io** | As of 2026, no longer offers an always-on free tier — trial-only, then pay-per-second. | Same caveat as Railway; keep as a documented "if paying a few dollars is acceptable" fallback, not the default plan. |
 
-**Decision to record in the actual build:** pick one primary target from the above (Render is the default recommendation given the no-card, genuinely-persistent-free profile), deploy there, and note the *actual* platform, URL, and any observed cold-start behaviour in `SUBMISSION.md`. If resource limits on the chosen free tier can't fit the embedding model comfortably, fall back to the BM25/keyword retrieval path documented in `docs/05-CHATBOT-RAG-SPEC.md` §9 rather than abandoning the free-hosting constraint.
+**Recorded decision:** Render was selected for its no-cost Docker service and straightforward repository integration. BM25/SQLite FTS5 was selected after resource measurement to preserve comfortable headroom on a 512 MB instance. The actual URL, cost, and cold-start limitation are recorded in `SUBMISSION.md`.
 
 ### 2.1 Prepared Render deployment
 
 `render.yaml` is the concrete deployment manifest. It uses the Docker runtime, free 512 MB plan, `/api/health`, CI-gated automatic deploys, BM25 retrieval, the configured free-model chain, and dashboard-provided secrets. Render's free service filesystem is ephemeral, so the application intentionally reconstructs SQLite and its FTS5 index from the checked-in seed on each clean instance start; chat history is consequently demo-session data rather than durable product data. This avoids claiming persistent free disk support that the platform does not provide.
 
-After the repository is pushed, create a Render Blueprint from it and provide `OPENROUTER_API_KEY` plus `OPENROUTER_HTTP_REFERER` when prompted. The latter should be the assigned HTTPS service URL. If Render assigns a different service slug than `estatebot-assessment`, update `CORS_ALLOWED_ORIGINS`, although same-origin UI/API calls do not depend on CORS.
+The active service is configured with `OPENROUTER_API_KEY` in the host secret store and its assigned HTTPS URL in `OPENROUTER_HTTP_REFERER` and `CORS_ALLOWED_ORIGINS`. Reproductions should create a web service from the manifest and supply those secret/environment values without writing them to the repository.
 
 ## 3. Resource sizing
 

@@ -1,7 +1,7 @@
 # Implementation Status & Evidence
 
 **Recorded:** 2026-09-02 (Asia/Kolkata)
-**Scope:** local build and verification pass for the EstateBot assessment.
+**Scope:** completed local and public release verification for the EstateBot assessment.
 
 ## What is implemented
 
@@ -13,13 +13,13 @@
 - Polite, cached, bounded scraper infrastructure with robots handling, descriptive user-agent, delay, retries, WAF/challenge detection, domain circuit breaking, raw snapshots, and safe deactivation only after complete discovery.
 - DarGlobal and Wasalt parser packages, source-specific normalization, sitemap fallback, auditable standard-browser DarGlobal project/press/company and Wasalt project capture imports, city-guide documents, index builder, seed export, fixtures, and automated tests.
 - Docker multi-stage API image, separate scraper image, Compose tool profiles, persistent data volume, health check, and offline seed bootstrap for a clean API volume.
-- GitHub Actions test/container-smoke workflow and a Render Blueprint configured to deploy only after CI checks pass.
+- GitHub Actions test/container-smoke workflow and a container-host configuration that deploys only after CI checks pass.
 
 ## Verified local evidence
 
 | Check | Result |
 |---|---|
-| `PYTHONPATH=. .venv/bin/python -m pytest -q` | 51 passed; one upstream Starlette/httpx deprecation warning |
+| `PYTHONPATH=. .venv/bin/python -m pytest -q` | 54 passed; one upstream Starlette/httpx deprecation warning |
 | `docker compose config --quiet` | Passed |
 | API image build | Passed (`estatebot-api:local`) |
 | Fresh-container `/api/health` | HTTP 200; 36 DarGlobal + 212 Wasalt records loaded from seed |
@@ -33,16 +33,25 @@
 | OpenRouter catalog check | All three configured IDs present with zero prompt/completion pricing; context windows 262,144 / 256,000 / 1,048,576 tokens |
 | GitHub Actions | Public `main` workflow passed all tests, exact seed-count assertions, Compose validation, container health, and a five-citation Wasalt-project chat smoke check |
 
+## Verified public-release evidence
+
+| Check | Result |
+|---|---|
+| Public HTTPS UI and health | Passed; `/`, `/api/health`, `/api/stats`, and `/docs` are reachable over HTTPS |
+| Live corpus | 248 active listings/projects and 20 content documents; snapshot timestamp `2026-09-02T14:00:00Z` |
+| Authenticated OpenRouter inference | Passed with non-empty grounded answers and verified source citations; fallback models were observed in real responses |
+| Streaming | Passed; live SSE emitted token events followed by exactly one verified done event |
+| Browser QA | Passed at desktop and 375×812; no horizontal overflow, transcript refresh persistence, Enter/Shift+Enter, About disclosure, and secure citations verified |
+| Safety/edge cases | Empty/over-limit input returns 400; unknown geography and unsupported competitors return deterministic ungrounded responses; injection probe did not leak the system prompt |
+
+See [`DEPLOYED-QA.md`](DEPLOYED-QA.md) for the prompt-level record and the explicit observational limitations.
+
 The first 150-row crawl contained three landing-page false positives; those rows were removed, the discovery filter was corrected for ordinary links and JSON-LD, and a small bounded follow-up crawl produced 180 genuine detail records. The index and seed were then regenerated.
 
 ## Live-source findings
 
 The scraper was exercised against the live public sites. DarGlobal plain-HTTP probes returned an Incapsula shell, so the HTTP crawler correctly skipped them. The same public project index, all 36 linked project pages, all 15 articles exposed by the current press index, and the About/Investor Relations pages loaded normally in a standard unauthenticated browser; their visible DOM was captured and imported through a dedicated, tested normalization path without exporting cookies or solving/bypassing a challenge. The press index's visible “Load More” control did not expose additional links in this session. Wasalt robots and CDN sitemaps were readable, a bounded detail crawl produced 180 sale/rent records, and the initial public Projects result set exposed 32 project detail pages that were captured through the same standard-browser, visible-DOM approach. Full evidence is in [`scraper/live-findings.md`](../scraper/live-findings.md).
 
-## Remaining release gates
+## Remaining observational limitations
 
-1. Configure a real OpenRouter API key in the deployment secret store and run live model fallback/manual QA. Local deterministic mode and mocked provider fallback are verified.
-2. Connect the public `https://github.com/sanskarpan/estatebot` repository to the included `render.yaml` Blueprint. The repository is published, but the Render browser session is not authenticated and no deployment credentials are available in this workspace.
-3. Execute and record the 17-item deployed-URL manual QA script from [`docs/09-TESTING-QA.md`](09-TESTING-QA.md), including mobile, keyboard, cold-start, citation-link, and rate-limit checks.
-
-Until these gates are closed, `SUBMISSION.md` is intentionally not marked as a final submission; the two-source corpus and application are complete locally, but public delivery is not yet proven.
+The implementation and public delivery gates are closed. A full host idle-window cold start, native screen-reader session, and deliberately severed live network stream remain documented limitations rather than silently claimed tests; automated coverage verifies the corresponding UI and recovery paths.

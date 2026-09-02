@@ -55,6 +55,8 @@ class RetrievalService:
                 f"Property categories are {categories or 'not published'}. Ask me to narrow this by city, source, property type, bedrooms, or budget."
             )
             return RetrievalResult(plan, [], [], direct_answer=answer)
+        if plan.unsupported_entity_mentioned:
+            return RetrievalResult(plan, [], [], "; ".join(plan.notes))
         if plan.content_intent:
             rows = self.db.latest_content(plan.source_site, plan.content_type, self.max_chunks)
             chunks = [RetrievedChunk(

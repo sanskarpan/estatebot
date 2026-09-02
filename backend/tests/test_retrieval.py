@@ -29,6 +29,20 @@ def test_unknown_city_is_not_dropped(db):
     assert "Paris" in result.no_match_reason or "paris" in result.no_match_reason
 
 
+def test_unsupported_developer_does_not_receive_unrelated_citations(db):
+    result = RetrievalService(db).retrieve("What Emaar Beachfront properties are available?")
+    assert result.no_match_reason
+    assert "Emaar" in result.no_match_reason
+    assert result.chunks == []
+
+
+def test_competitor_comparison_stays_inside_the_corpus_boundary(db):
+    result = RetrievalService(db).retrieve("Is DarGlobal better than Damac?")
+    assert result.no_match_reason
+    assert "Damac" in result.no_match_reason
+    assert result.chunks == []
+
+
 def test_vectorish_fts_query(db):
     result = RetrievalService(db).retrieve("sky garden amenity")
     assert result.chunks

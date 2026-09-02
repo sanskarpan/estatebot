@@ -45,6 +45,19 @@ def test_chat_deterministic_mode(db, monkeypatch):
     assert payload["citations"]
 
 
+def test_unsupported_developer_returns_ungrounded_without_citations(db, monkeypatch):
+    monkeypatch.setattr(main, "db", db)
+    monkeypatch.setattr(main, "retrieval", RetrievalService(db, "bm25_only", 8))
+    client = TestClient(main.app)
+    response = client.post("/api/chat", json={"message": "What Emaar Beachfront properties are available?"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["grounded"] is False
+    assert payload["citations"] == []
+    assert payload["model_used"] is None
+    assert "Emaar" in payload["answer"]
+
+
 def test_empty_chat_is_400(db, monkeypatch):
     monkeypatch.setattr(main, "db", db)
     client = TestClient(main.app)
@@ -56,10 +69,13 @@ def test_chat_rate_limit_returns_retry_after(db, monkeypatch):
     monkeypatch.setattr(main.settings, "chat_rate_limit_requests", 1)
     main.rate_buckets.clear()
     client = TestClient(main.app)
-    assert client.post("/api/chat", json={"message": "What is in Jeddah?"}).status_code == 200
-    response = client.post("/api/chat", json={"message": "What is in Riyadh?"})
+    headers = {"CF-Connecting-IP": "203.0.113.10"}
+    assert client.post("/api/chat", headers=headers, json={"message": "What is in Jeddah?"}).status_code == 200
+    response = client.post("/api/chat", headers=headers, json={"message": "What is in Riyadh?"})
     assert response.status_code == 429
     assert response.headers["Retry-After"]
+    # A different client address has an independent bucket.
+    assert client.post("/api/chat", headers={"CF-Connecting-IP": "203.0.113.11"}, json={"message": "What is in Riyadh?"}).status_code == 200
     main.rate_buckets.clear()
 
 
