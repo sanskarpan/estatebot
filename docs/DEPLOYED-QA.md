@@ -92,3 +92,11 @@ The 11-message live sample completed without timeouts or crashes. Grounded model
 - “Which locations do you cover?” returned all 13 corpus cities and all 7 countries, including Dubai, London, Muscat, and the United Arab Emirates, while clearly stating that EstateBot is corpus-bound rather than a worldwide search engine.
 - The first-run screen now exposes the 13-city/7-country breadth and leads with a Dubai example instead of visually implying Riyadh-only coverage. The About dialog shows both city and country counts.
 - Automated coverage increased to 62 passing tests, including deterministic greeting routing, provider-call avoidance for greetings, location coverage, and the existing unsupported-developer guard.
+
+## Source-balance and availability addendum — 2026-09-03
+
+- The corpus was reconfirmed at 36 DarGlobal projects and 212 Wasalt records. Explicit DarGlobal prompts already returned DarGlobal data; the observed defect affected generic queries because the larger Wasalt set could exhaust the result limit first.
+- Unspecified-source structured retrieval now alternates available candidates from DarGlobal and Wasalt. Explicit source filters, named entities, and global cheapest/most-expensive ordering are unchanged.
+- On the public UI, “What villas are available?” returned eight verified citations split evenly: four DarGlobal Oman projects and four Wasalt Saudi projects. The answer visibly grouped both providers.
+- The clean-container CI smoke check now requires a generic villa answer to contain both source identifiers. Automated coverage increased to 64 passing tests.
+- `.github/workflows/availability-ping.yml` is active on a ten-minute, off-hour-offset schedule and supports manual dispatch. Its first manual run passed against `/api/health`. This is documented as best-effort cold-start mitigation, not an uptime guarantee.
