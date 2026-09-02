@@ -79,6 +79,8 @@ The 11-message live sample completed without timeouts or crashes. Grounded model
 - `GET /api/models` returned the six curated choices, model labels, fallback status, and catalogue date from the public service.
 - A direct public `POST /api/chat` requesting Dots3 Note Preview returned `grounded=true`, one canonical DG1 citation, a non-empty answer, and the requested model in `model_used`.
 - An arbitrary non-allow-listed model ID returned HTTP 400 with `invalid_model` and was not forwarded upstream.
-- In the deployed browser UI, Dots3 could be selected from the labelled native combobox, served the answer, and appeared as “Answered with Dots3 Note Preview” below it.
-- The selected choice and actual-model disclosure survived reload. At 375×812, the selector measured 312×40 px and the document remained free of horizontal overflow.
-- Automated coverage increased to 59 passing tests, including catalogue allow-listing, selected-model-first ordering, fallback/deduplication, request propagation, actual-model reporting, and invalid-model rejection.
+- In the deployed browser UI, Dots3 could be selected from the labelled custom model menu, served the answer, and appeared as “Dots3 Note Preview” in the answer attribution.
+- The selected choice, transcript, and friendly actual-model disclosure survived reload.
+- The product UI redesign was rechecked at desktop and 375×812 after release: the structured empty state, compact fixed composer, seven-option model menu, native About dialog, cited answer cards, copy action, transcript persistence, and responsive layout all passed. The mobile document and body widths measured exactly 375 px with no horizontal overflow.
+- A refresh-only attribution defect found during this pass was fixed: restored answers now rerender after the model catalogue loads, so friendly labels replace raw provider IDs.
+- Automated coverage increased to 60 passing tests, including catalogue allow-listing, selected-model-first ordering, fallback/deduplication, request propagation, actual-model reporting, degraded-answer formatting, and invalid-model rejection.
