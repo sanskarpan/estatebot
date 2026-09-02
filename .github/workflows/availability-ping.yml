@@ -2,8 +2,8 @@ name: EstateBot Availability Ping
 
 on:
   schedule:
-    # Offset from the top of the hour to reduce peak-time scheduler delays.
-    - cron: "7/10 * * * *"
+    # Every 15 minutes, offset from the top of the hour to reduce peak-time delays.
+    - cron: "5,20,35,50 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -22,11 +22,24 @@ jobs:
         run: |
           curl \
             --fail \
+            --location \
             --show-error \
             --silent \
             --max-time 90 \
             --retry 2 \
             --retry-delay 5 \
             --retry-all-errors \
-            https://estatebot-assessment.onrender.com/api/health \
-            | python -c 'import json,sys; payload=json.load(sys.stdin); assert payload.get("status") == "ok"'
+            --output "${RUNNER_TEMP}/estatebot-health.json" \
+            https://estatebot-assessment.onrender.com/api/health
+
+          python - "${RUNNER_TEMP}/estatebot-health.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert payload.get("status") == "ok", payload
+          records = payload.get("corpus", {}).get("listings_total", 0)
+          assert records > 0, payload
+          print(f"EstateBot ready: {records} records; uptime={payload.get('uptime_seconds')}s")
+          PY
