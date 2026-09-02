@@ -40,11 +40,18 @@
     </section>
 
     <form id="composer" class="composer">
+      <div class="model-picker">
+        <label for="model-select">AI model</label>
+        <select id="model-select" aria-describedby="model-help">
+          <option value="">Auto — recommended free fallback</option>
+        </select>
+        <span id="model-help">Your choice is tried first; EstateBot falls back safely if it is busy.</span>
+      </div>
       <label class="sr-only" for="message">Your question</label>
       <textarea id="message" rows="2" maxlength="2000" placeholder="Ask about a city, project, property type, price, or bedrooms…" required></textarea>
       <div class="composer-footer"><span id="char-count">0 / 2000</span><button id="send" class="button primary" type="submit">Send</button></div>
     </form>
-    <p class="footer-note">Grounded answers only · <span id="mode-label">Data-only fallback ready</span></p>
+    <p class="footer-note">Grounded answers only · Free models can be busy · <span id="mode-label">Data-only fallback ready</span></p>
   </main>
   <script src="/assets/app.js" defer></script>
 </body>

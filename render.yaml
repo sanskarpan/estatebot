@@ -30,6 +30,8 @@ services:
         value: z-ai/glm-5.2:free
       - key: OPENROUTER_MODEL_FALLBACK_2
         value: minimax/minimax-m3:free
+      - key: OPENROUTER_SELECTABLE_MODELS
+        value: dots-studio/dots-3-note-preview:free,nvidia/nemotron-3-ultra-550b-a55b:free,nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,z-ai/glm-5.2:free,minimax/minimax-m3:free
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_HTTP_REFERER

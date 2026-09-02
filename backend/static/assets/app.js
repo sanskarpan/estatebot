@@ -14,6 +14,8 @@ const state = {
   messages: restoredMessages(),
   busy: false,
   rateTimer: null,
+  selectedModel: sessionStorage.getItem('estatebot.model') || '',
+  modelLabels: {},
 };
 
 const $ = (id) => document.getElementById(id);
@@ -21,6 +23,7 @@ const chatLog = $('chat-log');
 const composer = $('composer');
 const input = $('message');
 const send = $('send');
+const modelSelect = $('model-select');
 
 function escapeHtml(value) {
   return value.replace(/[&<>"']/g, (character) => ({
@@ -109,6 +112,13 @@ function renderMessage(message) {
     bubble.appendChild(sources);
   }
 
+  if (message.role === 'assistant' && message.model_used) {
+    const model = document.createElement('div');
+    model.className = 'model-used';
+    model.textContent = `Answered with ${state.modelLabels[message.model_used] || message.model_used}`;
+    bubble.appendChild(model);
+  }
+
   row.append(avatar, bubble);
   chatLog.appendChild(row);
 }
@@ -134,6 +144,7 @@ function setBusy(value) {
   state.busy = value;
   input.disabled = value;
   send.disabled = value;
+  modelSelect.disabled = value;
   send.textContent = value ? 'Working…' : 'Send';
   document.querySelectorAll('.retry-button').forEach((button) => {
     button.disabled = value;
@@ -198,6 +209,30 @@ async function loadStats() {
   }
 }
 
+async function loadModels() {
+  try {
+    const response = await fetch('/api/models');
+    if (!response.ok) throw new Error('models unavailable');
+    const payload = await response.json();
+    (payload.models || []).forEach((model) => {
+      state.modelLabels[model.id] = model.label;
+      const option = document.createElement('option');
+      option.value = model.id;
+      option.textContent = `${model.label} · Free`;
+      modelSelect.appendChild(option);
+    });
+    if ([...modelSelect.options].some((option) => option.value === state.selectedModel)) {
+      modelSelect.value = state.selectedModel;
+    } else {
+      state.selectedModel = '';
+      sessionStorage.removeItem('estatebot.model');
+    }
+    render();
+  } catch {
+    $('model-help').textContent = 'Automatic free-model fallback is active.';
+  }
+}
+
 function parseSseChunk(buffer, onEvent) {
   const events = buffer.split('\n\n');
   const tail = events.pop();
@@ -254,7 +289,7 @@ async function sendMessage(text) {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-      body: JSON.stringify({ message: text, conversation_id: state.conversationId }),
+      body: JSON.stringify({ message: text, conversation_id: state.conversationId, model: state.selectedModel || null }),
       signal: controller.signal,
     });
 
@@ -354,6 +389,12 @@ input.addEventListener('keydown', (event) => {
   }
 });
 
+modelSelect.addEventListener('change', () => {
+  state.selectedModel = modelSelect.value;
+  if (state.selectedModel) sessionStorage.setItem('estatebot.model', state.selectedModel);
+  else sessionStorage.removeItem('estatebot.model');
+});
+
 document.querySelectorAll('.suggestions button').forEach((button) => {
   button.addEventListener('click', () => {
     input.value = button.textContent;
@@ -383,4 +424,4 @@ document.addEventListener('keydown', (event) => {
 });
 
 render();
-loadStats();
+Promise.allSettled([loadStats(), loadModels()]);

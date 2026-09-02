@@ -33,6 +33,15 @@ generator = OpenRouterGenerator(settings)
 started_at = time.monotonic()
 rate_buckets: dict[str, deque[float]] = defaultdict(deque)
 
+MODEL_LABELS = {
+    "dots-studio/dots-3-note-preview:free": "Dots3 Note Preview",
+    "nvidia/nemotron-3-ultra-550b-a55b:free": "Nemotron 3 Ultra",
+    "nvidia/nemotron-3-super-120b-a12b:free": "Nemotron 3 Super",
+    "google/gemma-4-31b-it:free": "Gemma 4 31B",
+    "z-ai/glm-5.2:free": "GLM 5.2",
+    "minimax/minimax-m3:free": "MiniMax M3",
+}
+
 app = FastAPI(title="EstateBot API", version="1.0.0", description="Grounded DarGlobal and Wasalt property assistant")
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["*"])
 
@@ -84,6 +93,8 @@ def _answer_payload(answer: str, citations: list[Any], conversation_id: str, mes
 
 
 async def process_chat(request: Request, body: ChatRequest) -> ChatResponse:
+    if body.model and body.model not in settings.selectable_models:
+        raise HTTPException(status_code=400, detail={"error": "invalid_model", "message": "Choose one of the available free models."})
     allowed, retry_after = _rate_limit(request)
     if not allowed:
         raise HTTPException(status_code=429, detail={"error": "rate_limited", "retry_after_seconds": retry_after})
@@ -99,14 +110,14 @@ async def process_chat(request: Request, body: ChatRequest) -> ChatResponse:
         answer, citations = deterministic_answer(body.message, result.chunks, reason=result.no_match_reason)
         model_used = None; degraded = False; grounded = False; mode = "none"
     else:
-        generation = await generator.generate(body.message, result.chunks, [{"role": row["role"], "content": row["content"]} for row in history_rows])
+        generation = await generator.generate(body.message, result.chunks, [{"role": row["role"], "content": row["content"]} for row in history_rows], preferred_model=body.model)
         if generation.degraded:
             answer, citations = deterministic_answer(body.message, result.chunks)
             model_used = None; degraded = True; grounded = bool(citations); mode = settings.retrieval_mode
         else:
             answer, citations, valid = verify_and_extract(generation.answer, result.chunks)
             if not valid:
-                retry = await generator.generate(body.message, result.chunks, [{"role": row["role"], "content": row["content"]} for row in history_rows], strict=True)
+                retry = await generator.generate(body.message, result.chunks, [{"role": row["role"], "content": row["content"]} for row in history_rows], strict=True, preferred_model=body.model)
                 if retry.degraded:
                     answer, citations = deterministic_answer(body.message, result.chunks)
                     model_used = None; degraded = True; grounded = bool(citations)
@@ -166,6 +177,19 @@ def health():
 @app.get("/api/stats")
 def stats():
     return db.stats()
+
+
+@app.get("/api/models")
+def models():
+    return {
+        "default": settings.openrouter_model_primary,
+        "models": [
+            {"id": model_id, "label": MODEL_LABELS.get(model_id, model_id), "free": True}
+            for model_id in settings.selectable_models
+        ],
+        "fallback_enabled": True,
+        "catalog_checked_at": "2026-09-02",
+    }
 
 
 @app.get("/api/listings/{source_site}/{source_id}")

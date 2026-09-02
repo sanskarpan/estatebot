@@ -39,7 +39,10 @@ class OpenRouterGenerator:
         self.settings = settings
         self.models = settings.models
 
-    async def generate(self, question: str, context: list[RetrievedChunk], history: list[dict[str, str]], *, strict: bool = False) -> GenerationResult:
+    def ordered_models(self, preferred_model: str | None = None) -> list[str]:
+        return list(dict.fromkeys([*([preferred_model] if preferred_model else []), *self.models]))
+
+    async def generate(self, question: str, context: list[RetrievedChunk], history: list[dict[str, str]], *, strict: bool = False, preferred_model: str | None = None) -> GenerationResult:
         if not self.settings.openrouter_api_key or not self.models:
             return GenerationResult("", None, True)
         context_text = "\n\n".join(f"<source id=\"{c.source_id}\" site=\"{c.source_site}\" name=\"{c.name}\">\n{' '.join(c.text.split()[:300])}\n</source>" for c in context)
@@ -55,7 +58,7 @@ class OpenRouterGenerator:
         headers = {"Authorization": f"Bearer {self.settings.openrouter_api_key}", "Content-Type": "application/json", "HTTP-Referer": self.settings.openrouter_http_referer, "X-Title": self.settings.openrouter_app_title}
         start = time.monotonic()
         async with httpx.AsyncClient() as client:
-            for model in self.models:
+            for model in self.ordered_models(preferred_model):
                 remaining = self.settings.llm_total_timeout_seconds - (time.monotonic() - start)
                 if remaining <= 0:
                     break

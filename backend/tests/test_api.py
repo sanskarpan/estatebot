@@ -15,6 +15,23 @@ def test_stats_and_citation_endpoint(db, monkeypatch):
     assert client.get("/api/listings/darglobal/unknown").status_code == 404
 
 
+def test_model_catalog_exposes_only_configured_free_choices(monkeypatch):
+    monkeypatch.setattr(
+        main.settings,
+        "openrouter_selectable_models",
+        "google/gemma-4-31b-it:free,minimax/minimax-m3:free",
+    )
+    response = TestClient(main.app).get("/api/models")
+    assert response.status_code == 200
+    payload = response.json()
+    assert [item["id"] for item in payload["models"]] == [
+        "google/gemma-4-31b-it:free",
+        "minimax/minimax-m3:free",
+    ]
+    assert all(item["free"] for item in payload["models"])
+    assert payload["fallback_enabled"] is True
+
+
 def test_listing_search_returns_filtered_page(db, monkeypatch):
     monkeypatch.setattr(main, "db", db)
     client = TestClient(main.app)
@@ -58,6 +75,46 @@ def test_unsupported_developer_returns_ungrounded_without_citations(db, monkeypa
     assert "Emaar" in payload["answer"]
 
 
+def test_unknown_model_selection_is_rejected(db, monkeypatch):
+    monkeypatch.setattr(main, "db", db)
+    monkeypatch.setattr(main, "retrieval", RetrievalService(db, "bm25_only", 8))
+    monkeypatch.setattr(main.settings, "openrouter_selectable_models", "google/gemma-4-31b-it:free")
+    main.rate_buckets.clear()
+    response = TestClient(main.app).post(
+        "/api/chat",
+        json={"message": "What is DG1?", "model": "paid-or-unknown/model"},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"]["error"] == "invalid_model"
+    main.rate_buckets.clear()
+
+
+def test_selected_model_reaches_generation_and_is_reported(db, monkeypatch):
+    from backend.app.generation.openrouter import GenerationResult
+
+    selected = "google/gemma-4-31b-it:free"
+    seen = []
+
+    class FakeGenerator:
+        async def generate(self, question, context, history, *, strict=False, preferred_model=None):
+            seen.append(preferred_model)
+            return GenerationResult("DG1 is in Dubai [[id:dg1]]", selected)
+
+    monkeypatch.setattr(main, "db", db)
+    monkeypatch.setattr(main, "retrieval", RetrievalService(db, "bm25_only", 8))
+    monkeypatch.setattr(main, "generator", FakeGenerator())
+    monkeypatch.setattr(main.settings, "openrouter_selectable_models", selected)
+    main.rate_buckets.clear()
+    response = TestClient(main.app).post(
+        "/api/chat",
+        json={"message": "What is DG1?", "model": selected},
+    )
+    assert response.status_code == 200
+    assert response.json()["model_used"] == selected
+    assert seen == [selected]
+    main.rate_buckets.clear()
+
+
 def test_empty_chat_is_400(db, monkeypatch):
     monkeypatch.setattr(main, "db", db)
     client = TestClient(main.app)
@@ -85,6 +142,8 @@ def test_static_frontend_is_served(db, monkeypatch):
     response = client.get("/")
     assert response.status_code == 200
     assert "EstateBot" in response.text
+    assert 'id="model-select"' in response.text
+    assert "Auto — recommended free fallback" in response.text
 
 
 def test_chat_sse_emits_verified_answer(db, monkeypatch):

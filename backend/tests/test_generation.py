@@ -47,6 +47,58 @@ async def test_openrouter_falls_back_after_primary_failure(monkeypatch):
     assert calls == ["primary:free", "fallback:free"]
 
 
+@pytest.mark.asyncio
+async def test_preferred_model_is_tried_first_then_configured_fallback(monkeypatch):
+    calls = []
+
+    class FakeResponse:
+        def __init__(self, status_code, payload=None):
+            self.status_code = status_code
+            self.payload = payload or {}
+
+        def json(self):
+            return self.payload
+
+    class FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def post(self, url, *, headers, json, timeout):
+            calls.append(json["model"])
+            if json["model"] == "selected:free":
+                return FakeResponse(429)
+            return FakeResponse(200, {"model": json["model"], "choices": [{"message": {"content": "Grounded [[id:dg1]]"}}]})
+
+    monkeypatch.setattr(openrouter.httpx, "AsyncClient", FakeClient)
+    settings = Settings(
+        openrouter_api_key="test",
+        openrouter_model_primary="primary:free",
+        openrouter_model_fallback_1="fallback:free",
+        openrouter_model_fallback_2=None,
+    )
+    result = await OpenRouterGenerator(settings).generate(
+        "Where is DG1?",
+        [RetrievedChunk("c1", "darglobal", "dg1", "https://darglobal.co.uk/dg1", "DG1", "overview", "Dubai", -1)],
+        [],
+        preferred_model="selected:free",
+    )
+    assert result.model_used == "primary:free"
+    assert calls == ["selected:free", "primary:free"]
+
+
+def test_preferred_model_is_not_duplicated_in_fallback_order():
+    settings = Settings(
+        openrouter_api_key="test",
+        openrouter_model_primary="primary:free",
+        openrouter_model_fallback_1="fallback:free",
+        openrouter_model_fallback_2=None,
+    )
+    assert OpenRouterGenerator(settings).ordered_models("fallback:free") == ["fallback:free", "primary:free"]
+
+
 def test_deterministic_price_answer_is_explicit_when_unpublished():
     context = [RetrievedChunk("c1", "darglobal", "dg1", "https://darglobal.co.uk/dg1", "DG1", "structured", "DG1 is an apartment. Bedrooms: 1 to 3.", -1)]
     answer, citations = deterministic_answer("How much does DG1 cost?", context)

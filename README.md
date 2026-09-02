@@ -4,7 +4,7 @@
 **Assignment:** AI Full Stack Engineer / Forward Deployed Engineer (FDE) — Technical Assessment
 **Deliverable type:** Deployed, publicly reachable AI chatbot grounded in scraped data from [DarGlobal](https://darglobal.co.uk) and [Wasalt](https://wasalt.sa) (also reachable via `wasalt.com`), containerised with Docker, powered by a free model on [OpenRouter](https://openrouter.ai).
 
-This repository is a **complete implementation and delivery package**: runnable application code, auditable source captures, a normalized seed corpus, automated tests, container/deployment configuration, and the specifications and decision records behind them. The documentation remains deliberately explicit so another engineer can reproduce, audit, refresh, and deploy the system without reverse-engineering its intent.
+This repository is a **complete implementation and delivery package**: runnable application code, auditable source captures, a normalized seed corpus, automated tests, container/deployment configuration, and the specifications and decision records behind them. The chat UI includes a curated free-model selector; a chosen model is tried first and the verified fallback chain remains active when free capacity is unavailable. The documentation remains deliberately explicit so another engineer can reproduce, audit, refresh, and deploy the system without reverse-engineering its intent.
 
 > **Current repository status:** the complete application and two-source seed corpus are present: 36 DarGlobal projects, 15 DarGlobal press releases, 2 DarGlobal company documents, 180 Wasalt sale/rent listings, 32 Wasalt projects, and 3 Wasalt city guides. Both sites' visible public pages that required a normal browser path were captured and imported through dedicated auditable normalizers; see [`scraper/live-findings.md`](scraper/live-findings.md). See [`docs/IMPLEMENTATION-STATUS.md`](docs/IMPLEMENTATION-STATUS.md) and [`docs/DEPLOYED-QA.md`](docs/DEPLOYED-QA.md) for implementation and release evidence.
 
@@ -42,8 +42,9 @@ If you are an AI assistant (or engineer) picking this up cold, read the document
 | 10 | `docs/10-EDGE-CASES.md` | Exhaustive edge-case catalog across scraping, data, RAG, chat, infra |
 | 11 | `docs/EDGE-CASE-TRACEABILITY.md` | Evidence map from every edge case to automated, inspected, live-source, or public-release QA |
 | 12 | `docs/DEPLOYED-QA.md` | Recorded public-release browser, API, model, security, and edge-case verification |
-| 13 | `CHECKLIST.md` | The master, sequential, checkbox-driven build checklist — the actual execution plan |
-| 14 | `SUBMISSION.md` | Final reviewer links, corpus facts, costs, limitations, and quick-test prompts |
+| 13 | `docs/OPENROUTER-MODELS.md` | Dated free-model catalogue research, live-access checks, curation rationale, and selector behavior |
+| 14 | `CHECKLIST.md` | The master, sequential, checkbox-driven build checklist — the actual execution plan |
+| 15 | `SUBMISSION.md` | Final reviewer links, corpus facts, costs, limitations, and quick-test prompts |
 | — | `.env.example` | Every environment variable the system needs, documented |
 
 **Rule of thumb:** `docs/*.md` define *what* and *why*. `CHECKLIST.md` defines *in what order* and *how to verify each step*. `SUBMISSION.md` is the final gate. If any instruction in `CHECKLIST.md` seems to conflict with a `docs/*.md` file, the `docs/*.md` file is authoritative — the checklist is a task-tracker, not a spec.

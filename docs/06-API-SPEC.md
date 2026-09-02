@@ -10,13 +10,15 @@ Send a message, get a grounded answer.
 ```json
 {
   "message": "What villas does DarGlobal have in Oman?",
-  "conversation_id": "optional-uuid, omit to start a new conversation"
+  "conversation_id": "optional-uuid, omit to start a new conversation",
+  "model": "optional ID from GET /api/models; omit for automatic selection"
 }
 ```
 
 **Validation rules**
 - `message`: required, non-empty after trim, max 2000 characters (return `400` with a clear error otherwise — do not silently truncate).
 - `conversation_id`: optional; if provided but unknown, treat as inputting a fresh conversation with that ID (do not 404 — be forgiving of client-side state loss) rather than erroring.
+- `model`: optional; must be one of the server's curated zero-cost models returned by `GET /api/models`. The selected model is attempted first, then the configured fallback chain. Unknown IDs return `400` and are never forwarded to the provider.
 
 **Response (non-streaming mode, `Accept: application/json`)**
 ```json
@@ -65,9 +67,25 @@ On mid-stream failure, emit `event: error` with a JSON payload `{"message": "...
 
 **Error responses**
 - `400` — invalid input (empty/too-long message).
+- `400` — requested model is not in the curated free-model allow-list.
 - `429` — rate limit exceeded (see §5).
 - `503` — all model providers in the fallback chain failed AND the deterministic degraded response itself could not be constructed (should be extremely rare — near-impossible unless the DB itself is unreachable); body: `{"error": "service_unavailable", "message": "..."}`.
 - Never a raw unhandled `500` with a stack trace — all exceptions caught at the route boundary and converted to a structured error payload.
+
+## 1.1 `GET /api/models`
+
+Returns the curated free chat models offered by the UI, the automatic-mode primary, whether fallback is enabled, and the catalogue review date. This endpoint intentionally does not expose the full upstream catalogue: music-generation, moderation-only, coding-only, harness-restricted, and models that produced empty answer content in live checks are excluded.
+
+```json
+{
+  "default": "google/gemma-4-31b-it:free",
+  "models": [
+    {"id": "google/gemma-4-31b-it:free", "label": "Gemma 4 31B", "free": true}
+  ],
+  "fallback_enabled": true,
+  "catalog_checked_at": "2026-09-02"
+}
+```
 
 ## 2. `GET /api/health`
 

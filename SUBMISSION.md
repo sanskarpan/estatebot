@@ -38,7 +38,7 @@
 
 - **Stack:** Python 3.12 / FastAPI / SQLite with WAL + FTS5 / BM25 / vanilla HTML-CSS-JavaScript frontend.
 - **Retrieval mode actually deployed:** `bm25_only`; selected for predictable low-memory Docker operation, with structured SQL filters for numeric and categorical facts.
-- **Model fallback chain deployed:** `google/gemma-4-31b-it:free` → `z-ai/glm-5.2:free` → `minimax/minimax-m3:free` → deterministic degraded response. The key is held only in the host's secret store.
+- **Selectable free models:** Dots3 Note Preview, Nemotron 3 Ultra, Nemotron 3 Super, Gemma 4 31B, GLM 5.2, and MiniMax M3. The user's choice is attempted first; automatic mode and every failed selection retain the `Gemma → GLM → MiniMax → deterministic` fallback path. The actual serving model is shown on each model-backed answer. The key is held only in the host's secret store.
 - **Data refresh method:** manual: `docker compose run --rm scraper`, then `docker compose run --rm ingestion`, followed by an API restart.
 
 ## 5. Cost ledger (actuals)

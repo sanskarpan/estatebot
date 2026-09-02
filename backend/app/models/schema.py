@@ -202,6 +202,7 @@ class Citation(BaseModel):
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
     conversation_id: str | None = None
+    model: str | None = Field(default=None, max_length=160)
 
     @field_validator("message")
     @classmethod

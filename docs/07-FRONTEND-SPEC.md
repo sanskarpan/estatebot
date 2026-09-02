@@ -13,6 +13,8 @@ A single-page chat interface. No auth, no routing complexity beyond the one scre
 5. **Suggested prompts** — on first load (empty conversation), show 4–6 clickable example questions drawn from `docs/01-SPEC.md` §4 use cases, tailored to the actual scraped corpus (don't suggest a question the corpus can't answer) — this materially improves first-impression review quality since the reviewer doesn't have to guess what to ask.
 6. **Typing/loading indicator** — shown between send and first token/full response.
 7. **Error state** — shown inline in the chat log as a distinct message style (not a silent failure or browser alert) when `/api/chat` errors or the client-side timeout (§6) fires; includes a retry action.
+8. **Free-model selector** — an accessible labelled `<select>` in the composer, populated from `/api/models`. “Auto” is the default; a chosen model is persisted for the browser session and tried first without disabling fallback.
+9. **Actual-model disclosure** — model-backed assistant messages display the provider-returned `model_used`, including when fallback served a different model than the user selected.
 8. **Rate-limit state** — when a `429` is received, show the countdown from `Retry-After` and disable the composer until it elapses.
 
 ## 3. States to explicitly design for

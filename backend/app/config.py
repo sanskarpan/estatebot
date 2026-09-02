@@ -24,6 +24,14 @@ class Settings(BaseSettings):
     openrouter_model_primary: str = "google/gemma-4-31b-it:free"
     openrouter_model_fallback_1: str | None = "z-ai/glm-5.2:free"
     openrouter_model_fallback_2: str | None = "minimax/minimax-m3:free"
+    openrouter_selectable_models: str = (
+        "dots-studio/dots-3-note-preview:free,"
+        "nvidia/nemotron-3-ultra-550b-a55b:free,"
+        "nvidia/nemotron-3-super-120b-a12b:free,"
+        "google/gemma-4-31b-it:free,"
+        "z-ai/glm-5.2:free,"
+        "minimax/minimax-m3:free"
+    )
     openrouter_http_referer: str = "http://localhost:8000"
     openrouter_app_title: str = "EstateBot"
 
@@ -54,6 +62,10 @@ class Settings(BaseSettings):
     @property
     def models(self) -> list[str]:
         return [x for x in [self.openrouter_model_primary, self.openrouter_model_fallback_1, self.openrouter_model_fallback_2] if x]
+
+    @property
+    def selectable_models(self) -> list[str]:
+        return list(dict.fromkeys(x.strip() for x in self.openrouter_selectable_models.split(",") if x.strip()))
 
 
 @lru_cache
