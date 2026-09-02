@@ -110,3 +110,12 @@ The 11-message live sample completed without timeouts or crashes. Grounded model
 - The textarea no longer uses native required validation and its accessible composer-level focus state replaces the former orange inner rectangle and browser tooltip.
 - The seven-option model menu stayed inside the mobile viewport. A Gemma 4 31B selection was sent to the public API; when that free route did not complete, the successful MiniMax M3 fallback was visibly and correctly disclosed.
 - New chat cleared messages, draft, transient state, and conversation context while intentionally retaining the selected model preference. Mobile cards and composer remained within the viewport without horizontal overflow.
+
+## Professional visual-system addendum — 2026-09-03
+
+- The released empty state now presents a property-research workspace rather than a generic chatbot splash: a modern system-sans hierarchy, subtle data grid, restrained green emphasis, and live indexed-record/source/model signals were verified in the public browser.
+- Raw character icons were removed from the interface. Corpus state, model routing, keyboard hint, close controls, assistant identity, source labels, external links, and missing-property imagery now share one inline-SVG language.
+- Property cards received stronger hierarchy, consistent image treatment, vector fallbacks, clearer metadata, and restrained elevation. A public `Show villas from both sources` request rendered eight cards split four DarGlobal/four Wasalt, including two clean image fallbacks.
+- The model selector exposed all seven options and remained entirely inside the mobile viewport. The About dialog, header controls, composer, focus states, and capability metrics were also rechecked at desktop and the smallest supported mobile width.
+- Browser QA found and corrected two additional issues during this visual pass: generic `both/all sources` language was initially mistaken for an unknown provider, and the New chat toast overlapped the mobile composer. Both now have regression coverage or measured browser verification.
+- The final suite contains 75 passing tests. CI also passed Compose validation, a clean image build, seeded startup, and container smoke checks for commit `4b2eb0b`.
