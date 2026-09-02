@@ -12,8 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -39,8 +39,22 @@ jobs:
           import json
           payload = json.load(open("health.json", encoding="utf-8"))
           assert payload["status"] == "ok"
-          assert payload["corpus"]["listings_darglobal"] >= 30
-          assert payload["corpus"]["listings_wasalt"] >= 150
+          assert payload["corpus"]["listings_total"] == 248
+          assert payload["corpus"]["listings_darglobal"] == 36
+          assert payload["corpus"]["listings_wasalt"] == 212
+          assert payload["corpus"]["content_documents_total"] == 20
+          PY
+          curl --fail --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -d '{"message":"What projects does Wasalt have in Riyadh?"}' \
+            http://127.0.0.1:8000/api/chat > chat.json
+          python - <<'PY'
+          import json
+          payload = json.load(open("chat.json", encoding="utf-8"))
+          assert payload["grounded"] is True
+          assert len(payload["citations"]) == 5
+          assert all(item["source_site"] == "wasalt" for item in payload["citations"])
+          assert all("/project/Riyadh/" in item["source_url"] for item in payload["citations"])
           PY
       - name: Show logs on failure
         if: failure()
