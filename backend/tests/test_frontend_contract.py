@@ -36,6 +36,8 @@ def test_static_frontend_keeps_resilience_and_accessibility_contracts():
     assert "prefers-reduced-motion" in css
     assert "overflow-wrap: break-word" in css
     assert ".property-media" in css
+    assert "height: 128px" in css
+    assert "position: absolute; inset: 0" in css
     assert ".hero-signals" in css
     for glyph in ("✦", "×", "⌂", "↵", "↗"):
         assert glyph not in html
