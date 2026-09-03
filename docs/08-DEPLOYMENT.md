@@ -98,7 +98,7 @@ Release verification requires:
 
 `.github/workflows/availability-ping.yml` requests the public `/api/health` endpoint every fifteen minutes at off-hour minute marks and supports manual execution. It follows redirects, uses a bounded timeout, retries transient failures, and fails visibly unless the response confirms readiness and a non-empty corpus.
 
-This is best-effort assessment availability, not an uptime guarantee. Scheduled jobs can be delayed or dropped, the hosting service can restart independently, and the application still needs a visible bounded waking/retry state. Manual dispatch passed against the public endpoint and confirmed the 248-record corpus. No `schedule` event appeared during the three slots observed in the release audit, so scheduled execution remains unproven rather than being represented as an uptime control. A complete provider idle-window wake is also an explicitly recorded observational gap.
+This is best-effort assessment availability, not an uptime guarantee. Scheduled jobs can be delayed or dropped, the hosting service can restart independently, and the application still needs a visible bounded waking/retry state. Manual dispatch passed against the public endpoint and confirmed the 248-record corpus. Later scheduled runs also passed and confirmed the same contract, but the observed run history is not evidence of an every-slot guarantee. A complete provider idle-window wake is also an explicitly recorded observational gap.
 
 ## 7. CI gates
 
